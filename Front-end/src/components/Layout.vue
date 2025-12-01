@@ -120,6 +120,11 @@ const baseMenuItems = [
     path: '/agents'
   },
   {
+    label: '资源库',
+    icon: 'Document',
+    path: '/knowledge'
+  },
+  {
     label: '系统设置',
     icon: 'Tools',
     path: '/settings'

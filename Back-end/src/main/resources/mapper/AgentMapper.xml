@@ -22,14 +22,15 @@
     </select>
 
     <insert id="insertAgent" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO agent (name, description, type, status, created_by, created_at, updated_at)
-        VALUES (#{name}, #{description}, #{type}, #{status}, #{createdBy}, #{createdAt}, #{updatedAt})
+        INSERT INTO agent (name, description, type, api_config, system_prompt, plugins_json, config_json, status, created_by, created_at, updated_at)
+        VALUES (#{name}, #{description}, #{type}, #{apiConfig}, #{systemPrompt}, #{pluginsJson}, #{configJson}, #{status}, #{createdBy}, #{createdAt}, #{updatedAt})
     </insert>
 
     <update id="updateAgent">
         UPDATE agent
         SET name = #{name}, description = #{description}, type = #{type},
-            status = #{status}, updated_at = #{updatedAt}
+            api_config = #{apiConfig}, system_prompt = #{systemPrompt}, plugins_json = #{pluginsJson},
+            config_json = #{configJson}, status = #{status}, updated_at = #{updatedAt}
         WHERE id = #{id}
     </update>
 

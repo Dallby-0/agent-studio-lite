@@ -55,6 +55,15 @@ const routes = [
     }
   },
   {
+    path: '/knowledge',
+    name: 'knowledge',
+    component: () => import('../views/KnowledgeView.vue'),
+    meta: {
+      title: '资源库 - Agent Studio',
+      requiresAuth: true
+    }
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),

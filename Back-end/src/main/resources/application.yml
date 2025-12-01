@@ -81,3 +81,24 @@ springdoc:
   packages-to-scan: com.agentworkflow.controller
   # 配置要匹配的路径模式
   paths-to-match: /**
+
+# AI服务配置 - DeepSeek API
+ai:
+  deepseek:
+    api-key: ${DEEPSEEK_API_KEY:sk-76e09595f32945f7b089181fe4b7c16b}
+    base-url: https://api.deepseek.com
+    model: deepseek-chat
+    max-tokens: 2048
+    temperature: 0.7
+
+# pgvector 向量数据库配置
+vector-db:
+  url: jdbc:postgresql://pgvector-test:5432/vector_db
+  username: vector_user
+  password: vector_pass_123
+
+# 本地 Embedding 服务配置
+embedding:
+  base-url: http://embedding-service:9000
+  model: BAAI/bge-small-zh-v1.5
+  dimension: 512

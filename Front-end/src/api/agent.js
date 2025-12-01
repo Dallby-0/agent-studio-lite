@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-// 创建axios实例
-const apiClient = axios.create({
+// 创建axios实例（导出以便其他模块复用）
+export const apiClient = axios.create({
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -139,6 +139,37 @@ export default {
       return response
     } catch (error) {
       console.error(`删除智能体 ${id} 失败:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * 获取指定智能体绑定的知识库
+   */
+  async getAgentKnowledge(agentId) {
+    try {
+      const response = await apiClient.get(`/api/agents/${agentId}/knowledge`)
+      console.log(`获取智能体 ${agentId} 知识库成功:`, response)
+      return response
+    } catch (error) {
+      console.error(`获取智能体 ${agentId} 知识库失败:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * 为智能体绑定知识库
+   */
+  async addAgentKnowledge(agentId, knowledgeBaseId) {
+    try {
+      const response = await apiClient.post('/api/agents/knowledge', {
+        agentId,
+        knowledgeBaseId
+      })
+      console.log(`为智能体 ${agentId} 绑定知识库 ${knowledgeBaseId} 成功:`, response)
+      return response
+    } catch (error) {
+      console.error(`为智能体 ${agentId} 绑定知识库 ${knowledgeBaseId} 失败:`, error)
       throw error
     }
   }

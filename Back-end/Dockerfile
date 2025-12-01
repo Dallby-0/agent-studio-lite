@@ -15,7 +15,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # 运行阶段
-FROM eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:17-jdk
 
 # 设置工作目录
 WORKDIR /app
@@ -24,9 +24,11 @@ WORKDIR /app
 COPY --from=build /app/target/back-end-1.0.0.jar app.jar
 
 # 设置时区
-RUN apk add --no-cache tzdata curl && \
+RUN apt-get update && \
+    apt-get install -y tzdata curl && \
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone
+    echo "Asia/Shanghai" > /etc/timezone && \
+    rm -rf /var/lib/apt/lists/*
 
 # 添加健康检查
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \

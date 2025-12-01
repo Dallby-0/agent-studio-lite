@@ -117,10 +117,44 @@ services:
       - agent-network-test
     restart: unless-stopped
 
+  # 向量数据库（PostgreSQL + pgvector）
+  pgvector-test:
+    image: pgvector/pgvector:pg16
+    container_name: agent-workflow-pgvector-test
+    environment:
+      - POSTGRES_DB=vector_db
+      - POSTGRES_USER=vector_user
+      - POSTGRES_PASSWORD=vector_pass_123
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgvector-data-test:/var/lib/postgresql/data
+      - ./Database/pgvector-init:/docker-entrypoint-initdb.d
+    networks:
+      - agent-network-test
+    restart: unless-stopped
+
+  # 文本向量化服务（sentence-transformers BGE small zh）
+  embedding-service:
+    build:
+      context: ./Embedding-service
+      dockerfile: Dockerfile
+    networks:
+      - agent-network-test
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   mysql-data-test:
     driver: local
   redis-data-test:
+    driver: local
+  pgvector-data-test:
     driver: local
 
 networks:
