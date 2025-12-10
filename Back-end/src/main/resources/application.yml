@@ -102,3 +102,7 @@ embedding:
   base-url: http://embedding-service:9000
   model: BAAI/bge-small-zh-v1.5
   dimension: 512
+
+  iot:
+    default-device-uuid: test  # TODO: 修改为你真实的设备UUID
+

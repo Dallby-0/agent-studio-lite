@@ -122,6 +122,13 @@
                   <span>{{ formatDate(scope.row.createdAt) }}</span>
                 </template>
               </el-table-column>
+              <el-table-column label="操作" width="120">
+                <template #default="scope">
+                  <el-button type="primary" link size="small" @click="openSearchDialog(scope.row)">
+                    向量检索
+                  </el-button>
+                </template>
+              </el-table-column>
             </el-table>
           </el-tab-pane>
         </el-tabs>
@@ -225,6 +232,41 @@
           </span>
         </template>
       </el-dialog>
+
+      <!-- 向量检索测试对话框 -->
+      <el-dialog v-model="searchDialogVisible" title="向量检索测试" width="700px">
+        <div class="search-container">
+          <div class="search-header" style="margin-bottom: 15px; font-weight: bold;">
+            <span>当前知识库：{{ currentKnowledgeBase?.name }} (ID: {{ currentKnowledgeBase?.id }})</span>
+          </div>
+          <div class="search-input-area" style="margin-bottom: 20px;">
+            <el-input
+              v-model="searchQuery"
+              placeholder="请输入要检索的文本..."
+              @keyup.enter="handleVectorSearch"
+              clearable
+            >
+              <template #append>
+                <el-button @click="handleVectorSearch" :loading="searching">检索</el-button>
+              </template>
+            </el-input>
+          </div>
+          
+          <div class="search-results" v-if="searchResults.length > 0">
+            <div class="result-title" style="margin-bottom: 10px; font-weight: bold;">检索结果 (Top {{ searchResults.length }})：</div>
+            <el-card v-for="(item, index) in searchResults" :key="index" class="result-item" shadow="hover" style="margin-bottom: 10px;">
+              <div class="result-score" style="margin-bottom: 5px;">
+                <el-tag size="small" :type="getScoreTagType(item.score)">距离: {{ item.score.toFixed(4) }}</el-tag>
+              </div>
+              <div class="result-content" style="white-space: pre-wrap; line-height: 1.5;">{{ item.content }}</div>
+              <div class="result-meta" v-if="item.metadata" style="margin-top: 5px; color: #999; font-size: 12px;">元数据: {{ item.metadata }}</div>
+            </el-card>
+          </div>
+          <div v-else-if="searched" class="empty-result" style="text-align: center; color: #999; padding: 20px;">
+            未找到相关结果
+          </div>
+        </div>
+      </el-dialog>
     </div>
   </Layout>
 </template>
@@ -258,6 +300,51 @@ const editingPluginIndex = ref(-1)
 // 知识库列表
 const knowledgeList = ref([])
 const loading = ref(false)
+
+// 向量检索
+const searchDialogVisible = ref(false)
+const currentKnowledgeBase = ref(null)
+const searchQuery = ref('')
+const searchResults = ref([])
+const searching = ref(false)
+const searched = ref(false)
+
+const openSearchDialog = (kb) => {
+  currentKnowledgeBase.value = kb
+  searchQuery.value = ''
+  searchResults.value = []
+  searched.value = false
+  searchDialogVisible.value = true
+}
+
+const handleVectorSearch = async () => {
+  if (!searchQuery.value.trim()) {
+    ElMessage.warning('请输入检索内容')
+    return
+  }
+  searching.value = true
+  searched.value = true
+  searchResults.value = []
+  try {
+    const res = await knowledgeApi.vectorSearch(searchQuery.value, currentKnowledgeBase.value.id)
+    // apiClient returns response.data (the body)
+    if (res.code === 200) {
+      searchResults.value = res.data
+    } else {
+      ElMessage.error(res.message || '检索失败')
+    }
+  } catch (error) {
+    ElMessage.error('检索异常')
+  } finally {
+    searching.value = false
+  }
+}
+
+const getScoreTagType = (score) => {
+  if (score < 0.3) return 'success'
+  if (score < 0.5) return 'warning'
+  return 'danger'
+}
 
 // 知识库上传
 const uploadDialogVisible = ref(false)

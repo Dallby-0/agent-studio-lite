@@ -21,6 +21,25 @@ export default {
   },
 
   /**
+   * 向量检索测试
+   */
+  async vectorSearch(query, knowledgeBaseId, topK = 5) {
+    try {
+      const response = await apiClient.get('/api/knowledge/vector-search', {
+        params: {
+          query,
+          knowledgeBaseId,
+          topK
+        }
+      })
+      return response
+    } catch (error) {
+      console.error('向量检索失败:', error)
+      throw error
+    }
+  },
+
+  /**
    * 上传知识文件并（可选）绑定到指定 Agent
    * @param {Object} options
    * @param {File} options.file 知识文件

@@ -3,7 +3,10 @@ package com.agentworkflow.controller;
 import com.agentworkflow.entity.AgentKnowledge;
 import com.agentworkflow.entity.KnowledgeBase;
 import com.agentworkflow.service.AgentService;
+import com.agentworkflow.service.EmbeddingService;
 import com.agentworkflow.service.KnowledgeService;
+import com.agentworkflow.service.VectorStoreService;
+import com.agentworkflow.service.VectorStoreService.SimilarChunk;
 import com.agentworkflow.utils.ApiResponse;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,6 +32,38 @@ public class KnowledgeController {
 
     @Autowired
     private AgentService agentService;
+
+    @Autowired
+    private EmbeddingService embeddingService;
+
+    @Autowired
+    private VectorStoreService vectorStoreService;
+
+    /**
+     * 向量检索测试接口
+     */
+    @GetMapping("/vector-search")
+    public ApiResponse vectorSearch(
+            @RequestParam("query") String query,
+            @RequestParam("knowledgeBaseId") Long knowledgeBaseId,
+            @RequestParam(value = "topK", defaultValue = "5") int topK) {
+        try {
+            if (query == null || query.trim().isEmpty()) {
+                return ApiResponse.fail(400, "查询内容不能为空");
+            }
+            // 1. 向量化
+            float[] embedding = embeddingService.embed(query);
+            if (embedding == null || embedding.length == 0) {
+                return ApiResponse.fail(500, "向量化失败");
+            }
+            // 2. 检索
+            List<SimilarChunk> results = vectorStoreService.searchTopK(knowledgeBaseId, embedding, topK);
+            return ApiResponse.success(results);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.fail(500, "检索失败: " + e.getMessage());
+        }
+    }
 
     /**
      * 上传知识文件（PDF/Word/Markdown 等），自动解析 + 切分 + 向量化
