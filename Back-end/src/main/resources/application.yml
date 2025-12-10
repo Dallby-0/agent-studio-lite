@@ -62,7 +62,7 @@ jwt:
 
 # CORS配置
 cors:
-  allowed-origins: "http://localhost:81,http://localhost:3000,http://114.116.228.80:81"
+  allowed-origins: "*"
   allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
   allowed-headers: "*"
 
@@ -93,13 +93,13 @@ ai:
 
 # pgvector 向量数据库配置
 vector-db:
-  url: jdbc:postgresql://pgvector-test:5432/vector_db
-  username: vector_user
-  password: vector_pass_123
+  url: jdbc:postgresql://${VECTOR_DB_HOST:pgvector-test}:${VECTOR_DB_PORT:5432}/vector_db
+  username: ${VECTOR_DB_USER:vector_user}
+  password: ${VECTOR_DB_PASSWORD:vector_pass_123}
 
 # 本地 Embedding 服务配置
 embedding:
-  base-url: http://embedding-service:9000
+  base-url: http://${EMBEDDING_SERVICE_HOST:embedding-service}:${EMBEDDING_SERVICE_PORT:9000}
   model: BAAI/bge-small-zh-v1.5
   dimension: 512
 
