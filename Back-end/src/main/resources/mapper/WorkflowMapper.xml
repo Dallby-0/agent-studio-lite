@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.agentworkflow.mapper.WorkflowMapper">
+
+    <!-- 工作流定义相关SQL -->
+    <select id="getAllWorkflows" resultType="com.agentworkflow.entity.Workflow">
+        SELECT * FROM workflow WHERE is_deleted = 0
+    </select>
+    
+    <select id="getWorkflowsByCreatedBy" resultType="com.agentworkflow.entity.Workflow">
+        SELECT * FROM workflow WHERE created_by = #{createdBy} AND is_deleted = 0
+    </select>
+
+    <select id="getWorkflowById" resultType="com.agentworkflow.entity.Workflow">
+        SELECT * FROM workflow WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <select id="getWorkflowByIdAndCreatedBy" resultType="com.agentworkflow.entity.Workflow">
+        SELECT * FROM workflow WHERE id = #{id} AND created_by = #{createdBy} AND is_deleted = 0
+    </select>
+
+    <insert id="insertWorkflow" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO workflow (name, description, version, status, created_by, created_at, updated_at, is_deleted, definition)
+        VALUES (#{name}, #{description}, #{version}, #{status}, #{createdBy}, #{createdAt}, #{updatedAt}, #{isDeleted}, #{definition})
+    </insert>
+
+    <update id="updateWorkflow">
+        UPDATE workflow
+        SET name = #{name}, description = #{description}, version = #{version},
+            status = #{status}, updated_at = #{updatedAt}, definition = #{definition}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteWorkflow">
+        UPDATE workflow SET is_deleted = 1 WHERE id = #{id}
+    </delete>
+
+
+
+    <!-- 工作流实例相关SQL -->
+    <select id="getAllInstances" resultType="com.agentworkflow.entity.WorkflowInstance">
+        SELECT * FROM workflow_instance ORDER BY created_at DESC
+    </select>
+
+    <select id="getInstancesByWorkflowId" resultType="com.agentworkflow.entity.WorkflowInstance">
+        SELECT * FROM workflow_instance WHERE workflow_id = #{workflowId} ORDER BY created_at DESC
+    </select>
+
+    <select id="getInstanceById" resultType="com.agentworkflow.entity.WorkflowInstance">
+        SELECT * FROM workflow_instance WHERE id = #{id}
+    </select>
+
+    <insert id="insertInstance" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO workflow_instance (workflow_id, name, status, input_params, output_params, started_at, finished_at, created_at, updated_at)
+        VALUES (#{workflowId}, #{name}, #{status}, #{inputParams}, #{outputParams}, #{startedAt}, #{finishedAt}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="updateInstance">
+        UPDATE workflow_instance
+        SET status = #{status}, output_params = #{outputParams}, finished_at = #{finishedAt}, updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 工作流执行日志相关SQL -->
+    <select id="getExecutionLogsByInstanceId" resultType="com.agentworkflow.entity.WorkflowExecutionLog">
+        SELECT * FROM workflow_execution_log WHERE instance_id = #{instanceId} ORDER BY created_at DESC
+    </select>
+
+    <insert id="insertExecutionLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO workflow_execution_log (instance_id, node_id, node_type, execution_time, status, input_data, output_data, created_at)
+        VALUES (#{instanceId}, #{nodeId}, #{nodeType}, #{executionTime}, #{status}, #{inputData}, #{outputData}, #{createdAt})
+    </insert>
+</mapper>

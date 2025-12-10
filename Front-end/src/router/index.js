@@ -64,6 +64,24 @@ const routes = [
     }
   },
   {
+    path: '/workflows',
+    name: 'workflows',
+    component: () => import('../views/WorkflowsView.vue'),
+    meta: {
+      title: '工作流管理 - Agent Studio',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/workflows/designer',
+    name: 'workflow-designer',
+    component: () => import('../views/WorkflowDesignerView.vue'),
+    meta: {
+      title: '工作流设计器 - Agent Studio',
+      requiresAuth: true
+    }
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),

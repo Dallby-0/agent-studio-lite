@@ -124,7 +124,7 @@ public class JwtService {
 
     // 获取签名密钥（使用新版API）
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(getSecretKey());
+        byte[] keyBytes = Decoders.BASE64URL.decode(getSecretKey());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 

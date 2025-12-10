@@ -13,9 +13,9 @@ spring:
     allow-circular-references: true
   # 数据源配置 - MySQL
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:agent_studio_lite}?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true
-    username: ${MYSQL_USER:admin}
-    password: ${MYSQL_PASSWORD}
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:agent_workflow}?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:workflow_user}
+    password: ${MYSQL_PASSWORD:workflow_pass_123}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -26,7 +26,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD}
+      password: ${REDIS_PASSWORD:workflow_redis123456}
       database: 0
       lettuce:
         pool:
@@ -57,12 +57,12 @@ mybatis:
 
 # JWT配置
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:5f2b8a4c6d1e7g3h9i2j4k8l0m6n7o5p1q9r3s2t7u4v8w6x1y3z9abcdef1234567890abcdef1234567890}
   expiration: 86400000  # 24小时，单位毫秒
 
 # CORS配置
 cors:
-  allowed-origins: "http://localhost:81,http://localhost:3000,http://114.116.228.80:81"
+  allowed-origins: "http://localhost:81,http://localhost:3000,http://localhost:3001,http://114.116.228.80:81"
   allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
   allowed-headers: "*"
 
@@ -93,12 +93,12 @@ ai:
 
 # pgvector 向量数据库配置
 vector-db:
-  url: jdbc:postgresql://pgvector-test:5432/vector_db
-  username: vector_user
-  password: vector_pass_123
+  url: ${VECTOR_DB_URL:jdbc:postgresql://localhost:5432/vector_db}
+  username: ${VECTOR_DB_USERNAME:vector_user}
+  password: ${VECTOR_DB_PASSWORD:vector_pass_123}
 
 # 本地 Embedding 服务配置
 embedding:
-  base-url: http://embedding-service:9000
+  base-url: http://localhost:10086
   model: BAAI/bge-small-zh-v1.5
   dimension: 512

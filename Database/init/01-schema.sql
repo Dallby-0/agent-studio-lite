@@ -149,3 +149,51 @@ CREATE TABLE `user` (
   KEY `idx_phone` (`phone`),
   KEY `idx_role_id` (`role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+
+-- 工作流表
+CREATE TABLE `workflow` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '工作流ID',
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '工作流名称',
+  `description` text COLLATE utf8mb4_unicode_ci COMMENT '工作流描述',
+  `version` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '1.0.0' COMMENT '版本号',
+  `status` tinyint(1) NOT NULL DEFAULT '1' COMMENT '状态 0-禁用 1-启用',
+  `definition` json NOT NULL COMMENT '工作流完整定义（JSON格式）',
+  `created_by` bigint NOT NULL COMMENT '创建者ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_created_by` (`created_by`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作流表';
+
+-- 工作流实例表
+CREATE TABLE `workflow_instance` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '实例ID',
+  `workflow_id` bigint NOT NULL COMMENT '工作流ID',
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '实例名称',
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'running' COMMENT '状态：pending（待执行）, running（运行中）, completed（已完成）, failed（失败）, canceled（已取消）',
+  `input_params` json DEFAULT NULL COMMENT '输入参数（JSON格式）',
+  `output_params` json DEFAULT NULL COMMENT '输出参数（JSON格式）',
+  `started_at` datetime DEFAULT NULL COMMENT '开始执行时间',
+  `finished_at` datetime DEFAULT NULL COMMENT '完成执行时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_workflow_id` (`workflow_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作流实例表';
+
+-- 工作流执行日志表
+CREATE TABLE `workflow_execution_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `instance_id` bigint NOT NULL COMMENT '实例ID',
+  `node_id` bigint NOT NULL COMMENT '节点ID',
+  `node_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '节点类型',
+  `execution_time` decimal(10,3) NOT NULL COMMENT '执行耗时（毫秒）',
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '执行状态：success（成功）, failed（失败）',
+  `input_data` json DEFAULT NULL COMMENT '输入数据（JSON格式）',
+  `output_data` json DEFAULT NULL COMMENT '输出数据（JSON格式）',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_instance_id` (`instance_id`),
+  KEY `idx_node_id` (`node_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作流执行日志表';

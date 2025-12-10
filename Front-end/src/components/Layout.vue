@@ -19,6 +19,7 @@
           <!-- 默认的头部组件 -->
           <AppHeader 
             :userInfo="currentUserInfo"
+            :pageTitle="pageTitle"
             @toggle-sidebar="toggleSidebar"
             @logout="handleLogout"
           />
@@ -78,6 +79,11 @@ const props = defineProps({
     type: String,
     default: '64px'
   },
+  // 页面标题
+  pageTitle: {
+    type: String,
+    default: ''
+  },
   // 用户信息（优先级高于store中的信息）
   userInfo: {
     type: Object,
@@ -113,6 +119,11 @@ const baseMenuItems = [
     label: '任务管理',
     icon: 'List',
     path: '/tasks'
+  },
+  {
+    label: '工作流管理',
+    icon: 'Grid',
+    path: '/workflows'
   },
   {
     label: 'Agent配置',
