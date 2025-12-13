@@ -18,6 +18,7 @@ public interface AgentService {
     List<AgentKnowledge> getAgentKnowledge(Long agentId);
     AgentKnowledge addAgentKnowledge(AgentKnowledge agentKnowledge);
     boolean removeAgentKnowledge(Long id);
+    int removeAgentKnowledgeByKnowledgeBaseId(Long knowledgeBaseId);
 
     // 智能体插件相关方法
     List<AgentPlugin> getAllPlugins();

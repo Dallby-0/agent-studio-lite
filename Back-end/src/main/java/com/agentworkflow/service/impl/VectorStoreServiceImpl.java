@@ -82,6 +82,14 @@ public class VectorStoreServiceImpl implements VectorStoreService {
                 });
     }
 
+    @Override
+    public boolean deleteKnowledgeBase(Long knowledgeBaseId) {
+        // 先删除知识块，再删除知识库元信息
+        jdbcTemplate.update("DELETE FROM kb_chunk WHERE knowledge_base_id = ?", knowledgeBaseId);
+        int affected = jdbcTemplate.update("DELETE FROM knowledge_base WHERE id = ?", knowledgeBaseId);
+        return affected > 0;
+    }
+
     private String toVectorLiteral(float[] embedding) {
         StringBuilder sb = new StringBuilder();
         sb.append('[');

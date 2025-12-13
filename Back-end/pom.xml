@@ -29,6 +29,7 @@
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <jjwt.version>0.11.5</jjwt.version>
         <mybatis.version>3.0.3</mybatis.version>
+        <lombok.version>1.18.32</lombok.version>
     </properties>
 
     <dependencies>
@@ -185,6 +186,13 @@
                     <excludes>
                         <exclude>com/healthagent/**</exclude>
                     </excludes>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

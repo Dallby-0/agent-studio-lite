@@ -16,6 +16,12 @@ import java.util.*;
 @Service
 public class AIServiceImpl implements AIService {
 
+    @Value("${ai.deepseek.mock-enabled:true}")
+    private boolean mockEnabled;
+
+    @Value("${ai.deepseek.mock-prefix:[mock-ai] }")
+    private String mockPrefix;
+
     @Value("${ai.deepseek.api-key}")
     private String defaultApiKey;
 
@@ -86,6 +92,12 @@ public class AIServiceImpl implements AIService {
                     }
                     System.out.println("使用apiConfig作为API密钥: " + apiConfig.substring(0, Math.min(10, apiConfig.length())) + "...");
                 }
+            }
+
+            // 当未配置有效Key或开启mock时，直接返回模拟答案，避免外部依赖导致运行失败
+            if (mockEnabled || useApiKey == null || useApiKey.isBlank() || "mock".equalsIgnoreCase(useApiKey)) {
+                String lastUser = messages.isEmpty() ? "" : messages.get(messages.size() - 1).getOrDefault("content", "");
+                return mockPrefix + (lastUser == null ? "" : lastUser);
             }
 
             String url = useBaseUrl + "/v1/chat/completions";

@@ -122,10 +122,13 @@
                   <span>{{ formatDate(scope.row.createdAt) }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="120">
+              <el-table-column label="操作" width="180">
                 <template #default="scope">
                   <el-button type="primary" link size="small" @click="openSearchDialog(scope.row)">
                     向量检索
+                  </el-button>
+                  <el-button type="danger" link size="small" @click="confirmDelete(scope.row)">
+                    删除
                   </el-button>
                 </template>
               </el-table-column>
@@ -507,6 +510,36 @@ const fetchKnowledgeList = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const confirmDelete = (kb) => {
+  ElMessageBox.confirm(
+    `确定删除知识库"${kb.name}"？该操作会移除所有已向量化的内容且不可恢复。`,
+    '提示',
+    {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  )
+    .then(async () => {
+      loading.value = true
+      try {
+        const res = await knowledgeApi.deleteKnowledgeBase(kb.id)
+        if (res.code === 200) {
+          ElMessage.success('删除成功')
+          fetchKnowledgeList()
+        } else {
+          ElMessage.error(res.message || '删除失败')
+        }
+      } catch (error) {
+        console.error('删除知识库失败:', error)
+        ElMessage.error('删除失败，请稍后重试')
+      } finally {
+        loading.value = false
+      }
+    })
+    .catch(() => {})
 }
 
 const openUploadDialog = () => {

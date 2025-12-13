@@ -69,6 +69,19 @@ export default {
       console.error('上传知识库失败:', error)
       throw error
     }
+  },
+
+  /**
+   * 删除知识库
+   * @param {number} knowledgeBaseId
+   */
+  async deleteKnowledgeBase(knowledgeBaseId) {
+    try {
+      return await apiClient.delete(`/api/knowledge/bases/${knowledgeBaseId}`)
+    } catch (error) {
+      console.error('删除知识库失败:', error)
+      throw error
+    }
   }
 }
 

@@ -20,5 +20,10 @@ public interface KnowledgeService {
      * 获取所有知识库列表
      */
     List<KnowledgeBase> listKnowledgeBases();
+
+    /**
+     * 删除知识库及其数据
+     */
+    boolean deleteKnowledgeBase(Long knowledgeBaseId);
 }
 

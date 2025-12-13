@@ -1,9 +1,5 @@
 # Docker Compose配置文件 - 生产环境
 
-# 明确指定使用生产环境的.env文件
-env_file:
-  - .env.prod
-
 services:
   # 前端服务
   frontend:
