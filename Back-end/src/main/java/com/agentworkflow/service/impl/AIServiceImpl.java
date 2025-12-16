@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,8 +32,16 @@ public class AIServiceImpl implements AIService {
     @Value("${ai.deepseek.temperature}")
     private double defaultTemperature;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    // 构造函数，初始化RestTemplate并设置超时
+    public AIServiceImpl() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10000); // 连接超时10秒
+        factory.setReadTimeout(60000); // 读取超时60秒
+        this.restTemplate = new RestTemplate(factory);
+    }
 
     @Override
     public String chat(String systemPrompt, String userMessage, String plugins) {
@@ -120,9 +129,15 @@ public class AIServiceImpl implements AIService {
             System.out.println("发送AI请求: " + url);
             System.out.println("使用API密钥: " + useApiKey.substring(0, Math.min(10, useApiKey.length())) + "...");
             System.out.println("系统提示词: " + fullSystemPrompt);
+            System.out.println("消息数量: " + allMessages.size());
 
             // 发送请求
+            System.out.println("开始发送HTTP请求...");
+            long requestStartTime = System.currentTimeMillis();
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+            long requestDuration = System.currentTimeMillis() - requestStartTime;
+            System.out.println("HTTP请求完成，耗时: " + requestDuration + "ms");
+            System.out.println("响应状态码: " + response.getStatusCode());
 
             // 解析响应
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {

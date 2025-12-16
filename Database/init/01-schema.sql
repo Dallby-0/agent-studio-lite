@@ -150,50 +150,48 @@ CREATE TABLE `user` (
   KEY `idx_role_id` (`role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
--- 工作流表
-CREATE TABLE `workflow` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '工作流ID',
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '工作流名称',
-  `description` text COLLATE utf8mb4_unicode_ci COMMENT '工作流描述',
-  `version` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '1.0.0' COMMENT '版本号',
-  `status` tinyint(1) NOT NULL DEFAULT '1' COMMENT '状态 0-禁用 1-启用',
-  `definition` json NOT NULL COMMENT '工作流完整定义（JSON格式）',
-  `created_by` bigint NOT NULL COMMENT '创建者ID',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否删除',
-  PRIMARY KEY (`id`),
-  KEY `idx_created_by` (`created_by`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作流表';
+-- 状态机工作流定义表
+CREATE TABLE `state_workflow_definition` (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL COMMENT '工作流名称',
+    description TEXT COMMENT '工作流描述',
+    version VARCHAR(50) NOT NULL COMMENT '工作流版本',
+    status INT NOT NULL DEFAULT 1 COMMENT '工作流状态：1-启用，0-禁用',
+    created_by BIGINT COMMENT '创建人ID',
+    json_definition JSON NOT NULL COMMENT '完整的工作流定义JSON，包含全局变量、节点和转换规则',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    is_deleted TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='状态机工作流定义表';
 
 -- 工作流实例表
-CREATE TABLE `workflow_instance` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '实例ID',
-  `workflow_id` bigint NOT NULL COMMENT '工作流ID',
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '实例名称',
-  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'running' COMMENT '状态：pending（待执行）, running（运行中）, completed（已完成）, failed（失败）, canceled（已取消）',
-  `input_params` json DEFAULT NULL COMMENT '输入参数（JSON格式）',
-  `output_params` json DEFAULT NULL COMMENT '输出参数（JSON格式）',
-  `started_at` datetime DEFAULT NULL COMMENT '开始执行时间',
-  `finished_at` datetime DEFAULT NULL COMMENT '完成执行时间',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  KEY `idx_workflow_id` (`workflow_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作流实例表';
+CREATE TABLE `state_workflow_instance` (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    workflow_id BIGINT COMMENT '所属工作流ID',
+    name VARCHAR(255) NOT NULL COMMENT '实例名称',
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '实例状态：pending, running, completed, failed, canceled',
+    input_params JSON COMMENT '输入参数',
+    output_params JSON COMMENT '输出参数',
+    current_node_key VARCHAR(50) COMMENT '当前执行节点标识',
+    global_variables JSON NOT NULL COMMENT '全局变量当前值',
+    started_at DATETIME DEFAULT NULL COMMENT '开始执行时间',
+    finished_at DATETIME DEFAULT NULL COMMENT '结束执行时间',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    FOREIGN KEY (workflow_id) REFERENCES state_workflow_definition(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工作流实例表';
 
--- 工作流执行日志表
-CREATE TABLE `workflow_execution_log` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志ID',
-  `instance_id` bigint NOT NULL COMMENT '实例ID',
-  `node_id` bigint NOT NULL COMMENT '节点ID',
-  `node_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '节点类型',
-  `execution_time` decimal(10,3) NOT NULL COMMENT '执行耗时（毫秒）',
-  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '执行状态：success（成功）, failed（失败）',
-  `input_data` json DEFAULT NULL COMMENT '输入数据（JSON格式）',
-  `output_data` json DEFAULT NULL COMMENT '输出数据（JSON格式）',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`id`),
-  KEY `idx_instance_id` (`instance_id`),
-  KEY `idx_node_id` (`node_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作流执行日志表';
+-- 执行日志表
+CREATE TABLE `state_execution_log` (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    instance_id BIGINT NOT NULL COMMENT '所属实例ID',
+    node_key VARCHAR(50) NOT NULL COMMENT '执行节点标识',
+    node_type VARCHAR(50) NOT NULL COMMENT '节点类型',
+    execution_time BIGINT NOT NULL COMMENT '执行耗时(毫秒)',
+    status VARCHAR(20) NOT NULL COMMENT '执行状态：success, failed',
+    input_data JSON COMMENT '输入数据',
+    output_data JSON COMMENT '输出数据',
+    error_message TEXT COMMENT '错误信息',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    FOREIGN KEY (instance_id) REFERENCES state_workflow_instance(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='执行日志表';

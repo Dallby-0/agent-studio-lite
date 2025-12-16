@@ -1,0 +1,150 @@
+{
+  "nodes": [
+    {
+      "nodeKey": "start_node",
+      "name": "开始节点",
+      "type": "start",
+      "positionX": 100,
+      "positionY": 200,
+      "config": {}
+    },
+    {
+      "nodeKey": "llm_question",
+      "name": "大模型问答",
+      "type": "llm_call",
+      "positionX": 300,
+      "positionY": 200,
+      "config": {
+        "systemPrompt": "你是一个专业的AI助手，回答要简洁明了",
+        "userPrompt": "请回答：${question}",
+        "outputVar": "answer"
+      }
+    },
+    {
+      "nodeKey": "branch_node",
+      "name": "回答长度分支",
+      "type": "basic_branch",
+      "positionX": 500,
+      "positionY": 200,
+      "config": {
+        "branchType": "conditional",
+        "defaultBranch": "short_answer"
+      }
+    },
+    {
+      "nodeKey": "long_answer",
+      "name": "长回答处理",
+      "type": "llm_call",
+      "positionX": 700,
+      "positionY": 100,
+      "config": {
+        "systemPrompt": "你是一个专业的AI助手，请将长回答总结为一句话",
+        "userPrompt": "请总结：${answer}",
+        "outputVar": "summary"
+      }
+    },
+    {
+      "nodeKey": "short_answer",
+      "name": "短回答处理",
+      "type": "llm_call",
+      "positionX": 700,
+      "positionY": 300,
+      "config": {
+        "systemPrompt": "你是一个专业的AI助手，请将短回答润色得更生动",
+        "userPrompt": "请润色：${answer}",
+        "outputVar": "enhanced_answer"
+      }
+    },
+    {
+      "nodeKey": "final_process",
+      "name": "最终处理",
+      "type": "llm_call",
+      "positionX": 900,
+      "positionY": 200,
+      "config": {
+        "systemPrompt": "你是一个专业的AI助手，请给出最终回复",
+        "userPrompt": "最终结果：${summary || enhanced_answer || answer}",
+        "outputVar": "final_result"
+      }
+    },
+    {
+      "nodeKey": "end_node",
+      "name": "结束节点",
+      "type": "end",
+      "positionX": 1100,
+      "positionY": 200,
+      "config": {}
+    }
+  ],
+  "transitions": [
+    {
+      "fromNodeKey": "start_node",
+      "toNodeKey": "llm_question",
+      "conditionExpression": "true",
+      "variableMappings": "{}"
+    },
+    {
+      "fromNodeKey": "llm_question",
+      "toNodeKey": "branch_node",
+      "conditionExpression": "true",
+      "variableMappings": "{}"
+    },
+    {
+      "fromNodeKey": "branch_node",
+      "toNodeKey": "long_answer",
+      "conditionExpression": "answer.length > 100",
+      "variableMappings": "{}"
+    },
+    {
+      "fromNodeKey": "branch_node",
+      "toNodeKey": "short_answer",
+      "conditionExpression": "answer.length <= 100",
+      "variableMappings": "{}"
+    },
+    {
+      "fromNodeKey": "long_answer",
+      "toNodeKey": "final_process",
+      "conditionExpression": "true",
+      "variableMappings": "{}"
+    },
+    {
+      "fromNodeKey": "short_answer",
+      "toNodeKey": "final_process",
+      "conditionExpression": "true",
+      "variableMappings": "{}"
+    },
+    {
+      "fromNodeKey": "final_process",
+      "toNodeKey": "end_node",
+      "conditionExpression": "true",
+      "variableMappings": "{}"
+    }
+  ],
+  "globalVariables": [
+    {
+      "name": "question",
+      "type": "string",
+      "initialValue": "请详细介绍人工智能的发展历程和未来趋势"
+    },
+    {
+      "name": "answer",
+      "type": "string",
+      "initialValue": ""
+    },
+    {
+      "name": "summary",
+      "type": "string",
+      "initialValue": ""
+    },
+    {
+      "name": "enhanced_answer",
+      "type": "string",
+      "initialValue": ""
+    },
+    {
+      "name": "final_result",
+      "type": "string",
+      "initialValue": ""
+    }
+  ]
+}

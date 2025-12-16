@@ -108,12 +108,9 @@ const mockWorkflows = [
 // 加载工作流列表
 const loadWorkflows = () => {
   // 调用真实API获取工作流列表
-  getWorkflows({
-    page: currentPage.value,
-    pageSize: pageSize.value
-  }).then(response => {
-    workflows.value = response.data
-    total.value = response.total
+  getWorkflows().then(response => {
+    workflows.value = response.data || response
+    total.value = workflows.value.length
   }).catch(error => {
     ElMessage.error('加载工作流失败')
     console.error('加载工作流失败:', error)
