@@ -84,4 +84,32 @@ public class WorkflowInstanceController {
             return ApiResponse.fail(500, "启动工作流失败: " + e.getMessage());
         }
     }
+    
+    // 获取工作流实例状态
+    @GetMapping("/{id}/status")
+    public ApiResponse getStatus(@PathVariable Long id) {
+        logger.debug("接收到获取工作流实例状态的请求，实例ID: {}", id);
+        try {
+            Map<String, Object> status = workflowInstanceService.getStatus(id);
+            logger.debug("获取工作流实例状态成功，实例ID: {}", id);
+            return ApiResponse.success(status);
+        } catch (Exception e) {
+            logger.error("获取工作流实例状态失败: {}", e.getMessage(), e);
+            return ApiResponse.fail(500, "获取工作流实例状态失败: " + e.getMessage());
+        }
+    }
+    
+    // 获取工作流实例结果
+    @GetMapping("/{id}/result")
+    public ApiResponse getResult(@PathVariable Long id) {
+        logger.debug("接收到获取工作流实例结果的请求，实例ID: {}", id);
+        try {
+            Map<String, Object> result = workflowInstanceService.getResult(id);
+            logger.debug("获取工作流实例结果成功，实例ID: {}", id);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            logger.error("获取工作流实例结果失败: {}", e.getMessage(), e);
+            return ApiResponse.fail(500, "获取工作流实例结果失败: " + e.getMessage());
+        }
+    }
 }

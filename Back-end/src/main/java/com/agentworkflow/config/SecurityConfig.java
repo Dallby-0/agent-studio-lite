@@ -54,6 +54,8 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 允许登录和注册接口无需认证
                 .requestMatchers("/api/user/login", "/api/user/register").permitAll()
+                // 允许WebSocket连接（工作流对话界面）
+                .requestMatchers("/api/workflow-instances/*/chat").permitAll()
                 // 获取所有用户信息需要管理员权限
                 .requestMatchers("/api/user/all").hasRole("ADMIN")
                 // 其他所有/api请求都需要认证

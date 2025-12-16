@@ -15,4 +15,6 @@ public interface WorkflowInstanceService {
     WorkflowInstance updateInstance(WorkflowInstance instance);
     WorkflowInstance startWorkflow(Long workflowId, Map<String, Object> inputParams);
     List<WorkflowExecutionLog> getExecutionLogsByInstanceId(Long instanceId);
+    Map<String, Object> getStatus(Long instanceId);
+    Map<String, Object> getResult(Long instanceId);
 }

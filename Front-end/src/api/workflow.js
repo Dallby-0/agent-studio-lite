@@ -17,18 +17,6 @@ service.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
     
-    // 调试：打印请求数据（特别是工作流相关请求）
-    if (config.url.includes('/workflows')) {
-      console.log(`=== 调试：API请求 ${config.method.toUpperCase()} ${config.url} ===`)
-      if (config.data) {
-        console.log('请求体:', config.data)
-        if (config.data.edges) {
-          console.log('请求中的边数量:', config.data.edges.length)
-          console.log('请求中的边数据:', config.data.edges)
-        }
-      }
-    }
-    
     return config
   },
   error => {
@@ -55,67 +43,69 @@ service.interceptors.response.use(
 
 // 获取工作流列表
 export const getWorkflows = (params) => {
-  return service.get('/workflows', { params })
+  return service.get('/state-workflows', { params })
 }
 
 // 获取单个工作流详情
 export const getWorkflowById = (id) => {
-  return service.get(`/workflows/${id}`)
-}
-
-// 获取工作流完整定义（包含节点和边）
-export const getWorkflowDefinition = (id) => {
-  return service.get(`/workflows/${id}/definition`)
+  return service.get(`/state-workflows/${id}`)
 }
 
 // 创建工作流
 export const createWorkflow = (workflowData) => {
-  // 转换definition为JSON字符串
-  const processedData = { ...workflowData }
-  if (processedData.definition) {
-    processedData.definition = JSON.stringify(processedData.definition)
+  // 简化数据处理，直接发送jsonDefinition
+  const processedData = {
+    name: workflowData.name,
+    description: workflowData.description,
+    version: workflowData.version,
+    status: workflowData.status || 1,
+    createdBy: 1, // 暂时使用默认用户ID，后续从userStore获取
+    jsonDefinition: JSON.stringify(workflowData.definition)
   }
-  return service.post('/workflows', processedData)
+  return service.post('/state-workflows', processedData)
 }
 
 // 更新工作流
 export const updateWorkflow = (id, workflowData) => {
-  // 转换definition为JSON字符串
-  const processedData = { ...workflowData }
-  if (processedData.definition) {
-    processedData.definition = JSON.stringify(processedData.definition)
+  // 简化数据处理，直接发送jsonDefinition
+  const processedData = {
+    name: workflowData.name,
+    description: workflowData.description,
+    version: workflowData.version,
+    status: workflowData.status || 1,
+    jsonDefinition: JSON.stringify(workflowData.definition)
   }
-  return service.put(`/workflows/${id}`, processedData)
+  return service.put(`/state-workflows/${id}`, processedData)
 }
 
 // 删除工作流
 export const deleteWorkflow = (id) => {
-  return service.delete(`/workflows/${id}`)
+  return service.delete(`/state-workflows/${id}`)
 }
 
 // 启动工作流
 export const runWorkflow = (workflowId, inputParams) => {
-  return service.post(`/workflow-instances/start/${workflowId}`, inputParams)
+  return service.post(`/state-workflows/${workflowId}/execute`, inputParams)
 }
 
 // 获取工作流实例列表
 export const getWorkflowInstances = (params) => {
-  return service.get('/workflow-instances', { params })
+  return service.get('/state-workflows/instances', { params })
 }
 
 // 根据工作流ID获取实例
 export const getInstancesByWorkflowId = (workflowId) => {
-  return service.get(`/workflow-instances/workflow/${workflowId}`)
+  return service.get(`/state-workflows/${workflowId}/instances`)
 }
 
 // 获取单个工作流实例详情
 export const getWorkflowInstanceById = (id) => {
-  return service.get(`/workflow-instances/${id}`)
+  return service.get(`/state-workflows/instances/${id}`)
 }
 
 // 获取工作流实例执行日志
 export const getWorkflowInstanceLogs = (id) => {
-  return service.get(`/workflow-instances/${id}/logs`)
+  return service.get(`/state-workflows/instances/${id}/logs`)
 }
 
 export default service

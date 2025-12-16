@@ -2,13 +2,13 @@ package com.agentworkflow.service.impl;
 
 import com.agentworkflow.entity.WorkflowInstance;
 import com.agentworkflow.entity.WorkflowExecutionLog;
-import com.agentworkflow.mapper.WorkflowMapper;
 import com.agentworkflow.service.WorkflowInstanceService;
 import com.agentworkflow.service.WorkflowEngine;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Date;
@@ -17,48 +17,38 @@ import java.util.Date;
 public class WorkflowInstanceServiceImpl implements WorkflowInstanceService {
 
     @Autowired
-    private WorkflowMapper workflowMapper;
-
-    @Autowired
     private WorkflowEngine workflowEngine;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public List<WorkflowInstance> getAllInstances() {
-        return workflowMapper.getAllInstances();
+        // 暂时返回空列表，因为我们已经迁移到新的状态机工作流
+        return new ArrayList<>();
     }
 
     @Override
     public List<WorkflowInstance> getInstancesByWorkflowId(Long workflowId) {
-        return workflowMapper.getInstancesByWorkflowId(workflowId);
+        // 暂时返回空列表，因为我们已经迁移到新的状态机工作流
+        return new ArrayList<>();
     }
 
     @Override
     public WorkflowInstance getInstanceById(Long id) {
-        return workflowMapper.getInstanceById(id);
+        // 暂时返回null，因为我们已经迁移到新的状态机工作流
+        return null;
     }
 
     @Override
     public WorkflowInstance createInstance(WorkflowInstance instance) {
-        if (instance.getStatus() == null) {
-            instance.setStatus("pending");
-        }
-        if (instance.getCreatedAt() == null) {
-            instance.setCreatedAt(new Date());
-        }
-        if (instance.getUpdatedAt() == null) {
-            instance.setUpdatedAt(new Date());
-        }
-        workflowMapper.insertInstance(instance);
-        return instance;
+        // 暂时不支持创建旧版工作流实例
+        return null;
     }
 
     @Override
     public WorkflowInstance updateInstance(WorkflowInstance instance) {
-        instance.setUpdatedAt(new Date());
-        workflowMapper.updateInstance(instance);
-        return instance;
+        // 暂时不支持更新旧版工作流实例
+        return null;
     }
 
     @Override
@@ -68,6 +58,19 @@ public class WorkflowInstanceServiceImpl implements WorkflowInstanceService {
 
     @Override
     public List<WorkflowExecutionLog> getExecutionLogsByInstanceId(Long instanceId) {
-        return workflowMapper.getExecutionLogsByInstanceId(instanceId);
+        // 暂时返回空列表，因为我们已经迁移到新的状态机工作流
+        return new ArrayList<>();
+    }
+
+    @Override
+    public Map<String, Object> getStatus(Long instanceId) {
+        // 暂时返回空状态，因为我们已经迁移到新的状态机工作流
+        return new java.util.HashMap<>();
+    }
+
+    @Override
+    public Map<String, Object> getResult(Long instanceId) {
+        // 暂时返回空结果，因为我们已经迁移到新的状态机工作流
+        return new java.util.HashMap<>();
     }
 }

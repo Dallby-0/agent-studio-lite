@@ -1,0 +1,52 @@
+[2025-12-11 18:15:54] 开始运行所有测试用例...
+[2025-12-11 18:15:54] 开始登录...
+[2025-12-11 18:15:54] 登录成功，获取到令牌
+[2025-12-11 18:15:54] 
+=== 开始测试: 获取所有工作流 ===
+[2025-12-11 18:15:54] 测试获取所有工作流...
+[2025-12-11 18:15:54] 获取所有工作流响应状态码: 200
+[2025-12-11 18:15:54] 获取所有工作流响应: {"code":200,"message":"success","data":[{"id":1,"name":"测试状态机工作流","description":"一个简单的状态机工作流示例","version":"1.0.0","status":1,"createdBy":14,"jsonDefinition":"{\"nodes\": [{\"key\": \"start\", \"name\": \"开始节点\", \"type\": \"start\", \"config\": {\"inputs\": [{\"initialValue\": 0, \"variableName\": \"counter\"}]}, \"positionX\": 100, \"positionY\": 200}, {\"key\": \"math_op\", \"name\": \"数值运算\", \"type\": \"math_operation\", \"config\": {\"operation\": \"add\", \"leftOperand\": \"counter\", \"rightOperand\": \"1\", \"outputVariable\": \"counter\"}, \"positionX\": 300, \"positionY\": 200}, {\"key\": \"branch\", \"name\": \"基础分支\", \"type\": \"basic_branch\", \"config\": {\"conditions\": [{\"expression\": \"counter < 3\", \"targetNodeId\": \"math_op\"}, {\"expression\": \"default\", \"targetNodeId\": \"end\"}]}, \"positionX\": 500, \"positionY\": 200}, {\"key\": \"end\", \"name\": \"结束节点\", \"type\": \"end\", \"config\": {\"outputs\": [{\"variableName\": \"final_count\", \"sourceVariable\": \"counter\"}]}, \"positionX\": 700, \"positionY\": 200}], \"transitions\": [{\"toNode\": \"math_op\", \"fromNode\": \"start\", \"condition\": \"true\"}, {\"toNode\": \"branch\", \"fromNode\": \"math_op\", \"condition\": \"true\"}, {\"toNode\": \"math_op\", \"fromNode\": \"branch\", \"condition\": \"counter < 3\"}, {\"toNode\": \"end\", \"fromNode\": \"branch\", \"condition\": \"default\"}], \"globalVariables\": [{\"name\": \"counter\", \"type\": \"integer\", \"initialValue\": \"0\"}, {\"name\": \"message\", \"type\": \"string\", \"initialValue\": \"hello\"}, {\"name\": \"value\", \"type\": \"double\", \"initialValue\": \"10.5\"}]}","createdAt":"2025-12-10T21:27:09.000+00:00","updatedAt":"2025-12-11T10:12:50.000+00:00","isDeleted":0,"nodes":null,"transitions":null,"globalVariables":null}]}
+[2025-12-11 18:15:54] === 测试完成: 获取所有工作流，结果: 通过 ===
+[2025-12-11 18:15:54] 
+=== 开始测试: 创建工作流 ===
+[2025-12-11 18:15:54] 测试创建工作流...
+[2025-12-11 18:15:55] 创建工作流响应状态码: 200
+[2025-12-11 18:15:55] 创建工作流响应: {"code":500,"message":"创建工作流失败: \r\n### Error updating database.  Cause: java.sql.SQLException: Field 'json_definition' doesn't have a default value\r\n### The error may exist in file [C:\\Users\\dallb\\Desktop\\agent-studio-lite\\agent-studio-lite\\Back-end\\target\\classes\\mapper\\StateWorkflowMapper.xml]\r\n### The error may involve defaultParameterMap\r\n### The error occurred while setting parameters\r\n### SQL: INSERT INTO state_workflow_definition (name, description, version, status, created_by, created_at, updated_at, is_deleted)         VALUES (?, ?, ?, ?, ?, ?, ?, ?)\r\n### Cause: java.sql.SQLException: Field 'json_definition' doesn't have a default value\n; Field 'json_definition' doesn't have a default value","data":null}
+[2025-12-11 18:15:55] === 测试完成: 创建工作流，结果: 失败 ===
+[2025-12-11 18:15:55] 
+=== 开始测试: 获取单个工作流 ===
+[2025-12-11 18:15:55] 跳过获取单个工作流测试: 没有有效的工作流ID
+[2025-12-11 18:15:55] === 测试完成: 获取单个工作流，结果: 失败 ===
+[2025-12-11 18:15:55] 
+=== 开始测试: 获取工作流定义 ===
+[2025-12-11 18:15:55] 跳过获取工作流定义测试: 没有有效的工作流ID
+[2025-12-11 18:15:55] === 测试完成: 获取工作流定义，结果: 失败 ===
+[2025-12-11 18:15:55] 
+=== 开始测试: 启动工作流 ===
+[2025-12-11 18:15:55] 跳过启动工作流测试: 没有有效的工作流ID
+[2025-12-11 18:15:55] === 测试完成: 启动工作流，结果: 失败 ===
+[2025-12-11 18:15:55] 
+=== 开始测试: 获取所有工作流实例 ===
+[2025-12-11 18:15:55] 测试获取所有工作流实例...
+[2025-12-11 18:15:55] 获取所有工作流实例响应状态码: 200
+[2025-12-11 18:15:55] 获取所有工作流实例响应: {"code":200,"message":"success","data":[]}
+[2025-12-11 18:15:55] === 测试完成: 获取所有工作流实例，结果: 通过 ===
+[2025-12-11 18:15:55] 
+=== 开始测试: 获取工作流实例日志 ===
+[2025-12-11 18:15:55] 跳过获取工作流实例日志测试: 没有有效的工作流实例ID
+[2025-12-11 18:15:55] === 测试完成: 获取工作流实例日志，结果: 失败 ===
+[2025-12-11 18:15:55] 
+=== 开始测试: 删除工作流 ===
+[2025-12-11 18:15:55] 跳过删除工作流测试: 没有有效的工作流ID
+[2025-12-11 18:15:55] === 测试完成: 删除工作流，结果: 失败 ===
+[2025-12-11 18:15:55] 
+=== 测试结果汇总 ===
+[2025-12-11 18:15:55] 通过测试: 2/8
+[2025-12-11 18:15:55] 获取所有工作流: 通过
+[2025-12-11 18:15:55] 创建工作流: 失败
+[2025-12-11 18:15:55] 获取单个工作流: 失败
+[2025-12-11 18:15:55] 获取工作流定义: 失败
+[2025-12-11 18:15:55] 启动工作流: 失败
+[2025-12-11 18:15:55] 获取所有工作流实例: 通过
+[2025-12-11 18:15:55] 获取工作流实例日志: 失败
+[2025-12-11 18:15:55] 删除工作流: 失败

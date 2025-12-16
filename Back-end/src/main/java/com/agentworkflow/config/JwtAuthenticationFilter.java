@@ -52,6 +52,70 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        
+        // 处理WebSocket握手请求（强制认证）
+        String upgradeHeader = request.getHeader("Upgrade");
+        if ("websocket".equalsIgnoreCase(upgradeHeader) || requestURI.contains("/chat")) {
+            logger.info("检测到WebSocket握手请求: {}", requestURI);
+            
+            // WebSocket必须带token，检查是否有token（URL参数或Header）
+            String token = request.getParameter("token");
+            if (token == null || token.isEmpty()) {
+                // 如果没有URL参数token，检查Authorization头
+                final String authHeader = request.getHeader("Authorization");
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    token = authHeader.substring(7);
+                }
+            }
+            
+            // 强制要求token
+            if (token == null || token.isEmpty()) {
+                logger.warn("WebSocket连接缺少token，拒绝连接: {}", requestURI);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"code\": 401, \"message\": \"WebSocket连接需要有效的token\"}");
+                return;
+            }
+            
+            // 验证token
+            try {
+                String username = jwtService.getUsernameFromToken(token);
+                if (username == null) {
+                    logger.warn("WebSocket token无效，无法提取用户名");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"code\": 401, \"message\": \"无效的token\"}");
+                    return;
+                }
+                
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (!jwtService.validateToken(token, userDetails)) {
+                    logger.warn("WebSocket token验证失败: {}", username);
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"code\": 401, \"message\": \"token验证失败\"}");
+                    return;
+                }
+                
+                // token验证成功，设置认证信息
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+                logger.info("WebSocket连接已认证: {}", username);
+                
+            } catch (Exception e) {
+                logger.error("WebSocket token验证异常: {}", e.getMessage(), e);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"code\": 401, \"message\": \"token验证失败: " + e.getMessage() + "\"}");
+                return;
+            }
+            
+            // token验证通过，允许连接
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         // 从请求头获取Authorization字段
         final String authHeader = request.getHeader("Authorization");
