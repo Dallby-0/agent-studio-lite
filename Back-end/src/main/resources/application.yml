@@ -70,7 +70,7 @@ jwt:
 
 # CORS配置
 cors:
-  allowed-origins: "http://localhost:81,http://localhost:3000,http://localhost:3001,http://114.116.228.80:81,http://localhost:5173"
+  allowed-origins: "*"
   allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
   allowed-headers: "*"
 
@@ -101,12 +101,16 @@ ai:
 
 # pgvector 向量数据库配置
 vector-db:
-  url: ${VECTOR_DB_URL:jdbc:postgresql://localhost:5432/vector_db}
-  username: ${VECTOR_DB_USERNAME:vector_user}
+  url: jdbc:postgresql://${VECTOR_DB_HOST:pgvector-test}:${VECTOR_DB_PORT:5432}/vector_db
+  username: ${VECTOR_DB_USER:vector_user}
   password: ${VECTOR_DB_PASSWORD:vector_pass_123}
 
 # 本地 Embedding 服务配置
 embedding:
-  base-url: http://localhost:10086
+  base-url: http://${EMBEDDING_SERVICE_HOST:embedding-service}:${EMBEDDING_SERVICE_PORT:9000}
   model: BAAI/bge-small-zh-v1.5
   dimension: 512
+
+  iot:
+    default-device-uuid: test  # TODO: 修改为你真实的设备UUID
+

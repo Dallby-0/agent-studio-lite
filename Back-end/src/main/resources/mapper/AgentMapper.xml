@@ -52,6 +52,10 @@
         DELETE FROM agent_knowledge WHERE id = #{id}
     </delete>
 
+    <delete id="deleteAgentKnowledgeByKnowledgeBaseId">
+        DELETE FROM agent_knowledge WHERE knowledge_base_id = #{knowledgeBaseId}
+    </delete>
+
     <!-- 智能体插件相关SQL -->
     <select id="getAllPlugins" resultType="com.agentworkflow.entity.AgentPlugin">
         SELECT * FROM agent_plugin WHERE status = 1 ORDER BY created_at DESC

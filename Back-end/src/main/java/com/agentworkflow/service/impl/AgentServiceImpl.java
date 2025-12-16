@@ -196,6 +196,11 @@ public class AgentServiceImpl implements AgentService {
     }
 
     @Override
+    public int removeAgentKnowledgeByKnowledgeBaseId(Long knowledgeBaseId) {
+        return agentMapper.deleteAgentKnowledgeByKnowledgeBaseId(knowledgeBaseId);
+    }
+
+    @Override
     public List<AgentPlugin> getAllPlugins() {
         return agentMapper.getAllPlugins();
     }

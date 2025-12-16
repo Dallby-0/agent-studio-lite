@@ -19,6 +19,14 @@ public interface VectorStoreService {
     List<KnowledgeBase> listKnowledgeBases();
 
     /**
+     * 删除知识库以及其下的所有向量块
+     *
+     * @param knowledgeBaseId 知识库ID
+     * @return 是否删除成功
+     */
+    boolean deleteKnowledgeBase(Long knowledgeBaseId);
+
+    /**
      * 向知识库中插入一条知识块
      *
      * @param knowledgeBaseId 知识库ID

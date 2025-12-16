@@ -75,11 +75,11 @@ public class SecurityConfig {
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
         
         // 从配置属性中获取允许的源
-        if (corsProperties.getAllowedOrigins() != null) {
+        if (corsProperties.getAllowedOrigins() != null && !corsProperties.getAllowedOrigins().equals("*")) {
             configuration.setAllowedOrigins(java.util.Arrays.asList(corsProperties.getAllowedOrigins().split(",")));
         } else {
-            // 默认允许所有源（开发环境）
-            configuration.setAllowedOrigins(java.util.Collections.singletonList("*"));
+            // 默认允许所有源（开发环境），或者配置为*时，使用AllowedOriginPatterns以支持allowCredentials
+            configuration.setAllowedOriginPatterns(java.util.Collections.singletonList("*"));
         }
         
         // 从配置属性中获取允许的方法

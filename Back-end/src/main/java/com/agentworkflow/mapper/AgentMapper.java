@@ -22,6 +22,7 @@ public interface AgentMapper {
     List<AgentKnowledge> getAgentKnowledge(Long agentId);
     int insertAgentKnowledge(AgentKnowledge agentKnowledge);
     int deleteAgentKnowledge(Long id);
+    int deleteAgentKnowledgeByKnowledgeBaseId(Long knowledgeBaseId);
 
     // 智能体插件相关方法
     List<AgentPlugin> getAllPlugins();
