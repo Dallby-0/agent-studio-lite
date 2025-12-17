@@ -30,3 +30,4 @@ Thumbs.db
 # Docker volumes
 /volumes/
 **/volumes/
+*.5
