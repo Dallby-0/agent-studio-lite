@@ -81,6 +81,9 @@ services:
     container_name: agent-studio-embedding
     ports:
       - "10086:9000"
+    volumes:
+      # 挂载本地模型目录到容器，避免每次构建镜像
+      - ./Embedding-service/model:/app/model
     networks:
       - agent-network
     restart: unless-stopped

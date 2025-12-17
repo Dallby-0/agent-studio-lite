@@ -1,0 +1,199 @@
+# Docker Compose 配置文件 - Windows 环境（包含前后端与依赖服务）
+# 说明：
+# - 前后端均在容器中运行
+# - 使用 container 配置文件：SPRING_PROFILES_ACTIVE=container
+# - 端口映射：
+#   - 前端：81 -> 80
+#   - 后端：8082 -> 8080
+#   - Embedding：10086 -> 9000
+#   - MySQL：3306 -> 3306
+#   - Redis：6379 -> 6379
+#   - pgvector：5432 -> 5432
+
+version: '3.8'
+
+services:
+  # 前端服务
+  frontend:
+    build:
+      context: ./Front-end
+      dockerfile: Dockerfile
+    ports:
+      - "81:80"
+    depends_on:
+      - backend
+    networks:
+      - agent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # 后端服务
+  backend:
+    build:
+      context: ./Back-end
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    depends_on:
+      - mysql
+      - redis
+      - pgvector
+      - embedding-service
+    networks:
+      - agent-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=container
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=agent_workflow
+      - MYSQL_USER=workflow_user
+      - MYSQL_PASSWORD=workflow_pass_123
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=workflow_redis123456
+      - VECTOR_DB_HOST=pgvector
+      - VECTOR_DB_PORT=5432
+      - VECTOR_DB_USER=vector_user
+      - VECTOR_DB_PASSWORD=vector_pass_123
+      - EMBEDDING_SERVICE_HOST=embedding-service
+      - EMBEDDING_SERVICE_PORT=9000
+      - JWT_SECRET=5f2b8a4c6d1e7g3h9i2j4k8l0m6n7o5p1q9r3s2t7u4v8w6x1y3z9
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/status"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
+
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: agent-studio-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123456
+      - MYSQL_DATABASE=agent_workflow
+      - MYSQL_USER=workflow_user
+      - MYSQL_PASSWORD=workflow_pass_123
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./Database/init:/docker-entrypoint-initdb.d
+    networks:
+      - agent-network
+    restart: unless-stopped
+    command:
+      - "--default-authentication-plugin=mysql_native_password"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+      - "--max_connections=1000"
+      - "--max_allowed_packet=64M"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: agent-studio-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - agent-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass workflow_redis123456
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "workflow_redis123456", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # 向量数据库（PostgreSQL + pgvector）
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: agent-studio-pgvector
+    environment:
+      - POSTGRES_DB=vector_db
+      - POSTGRES_USER=vector_user
+      - POSTGRES_PASSWORD=vector_pass_123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgvector-data:/var/lib/postgresql/data
+      - ./Database/pgvector-init:/docker-entrypoint-initdb.d
+    networks:
+      - agent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "vector_user", "-d", "vector_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 文本向量化服务
+  embedding-service:
+    build:
+      context: ./Embedding-service
+      dockerfile: Dockerfile
+    container_name: agent-studio-embedding
+    ports:
+      - "10086:9000"
+    volumes:
+      # 挂载本地模型目录到容器，避免每次构建镜像
+      - ./Embedding-service/model:/app/model
+    networks:
+      - agent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # 数据库管理工具 - phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: agent-studio-phpmyadmin
+    ports:
+      - "8888:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PMA_USER=root
+      - PMA_PASSWORD=root123456
+      - PMA_ARBITRARY=1
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - agent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+  pgvector-data:
+    driver: local
+
+networks:
+  agent-network:
+    driver: bridge
+

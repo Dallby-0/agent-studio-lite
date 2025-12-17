@@ -17,7 +17,7 @@ import java.util.*;
 @Service
 public class AIServiceImpl implements AIService {
 
-    @Value("${ai.deepseek.mock-enabled:true}")
+    @Value("${ai.deepseek.mock-enabled:false}")
     private boolean mockEnabled;
 
     @Value("${ai.deepseek.mock-prefix:[mock-ai] }")

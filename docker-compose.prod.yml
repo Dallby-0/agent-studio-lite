@@ -1,5 +1,9 @@
 # Docker Compose配置文件 - 生产环境
 
+# 明确指定使用生产环境的.env文件
+env_file:
+  - .env.prod
+
 services:
   # 前端服务
   frontend:
@@ -29,15 +33,9 @@ services:
     depends_on:
       - mysql
       - redis
-      - pgvector
-      - embedding-service
     networks:
       - agent-network
     # 环境变量已通过.env.prod文件加载，不再硬编码
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - VECTOR_DB_HOST=pgvector
-      - EMBEDDING_SERVICE_HOST=embedding-service
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/status"]
@@ -86,6 +84,8 @@ services:
       timeout: 3s
       retries: 3
 
+<<<<<<< Updated upstream
+=======
   # 向量数据库（PostgreSQL + pgvector）
   pgvector:
     image: pgvector/pgvector:pg16
@@ -108,6 +108,9 @@ services:
       context: ./Embedding-service
       dockerfile: Dockerfile
     container_name: agent-studio-lite-embedding
+    volumes:
+      # 挂载本地模型目录到容器，避免每次构建镜像
+      - ./Embedding-service/model:/app/model
     networks:
       - agent-network
     restart: always
@@ -118,13 +121,12 @@ services:
       retries: 3
       start_period: 30s
 
+>>>>>>> Stashed changes
 # 持久化卷
 volumes:
   mysql_data:
     driver: local
   redis_data:
-    driver: local
-  pgvector_data:
     driver: local
 
 # 网络配置
