@@ -709,6 +709,57 @@
                   </div>
                 </template>
                 
+                <!-- HTTP调用节点配置 -->
+                <template v-if="selectedNode.type === 'http_call'">
+                  <el-form-item label="请求URL">
+                    <el-input 
+                      v-model="selectedNodeConfig.url" 
+                      @input="updateNodeConfig"
+                      placeholder="例如：https://api.example.com/data"
+                    ></el-input>
+                    <div class="el-form-item__help">要请求的完整URL地址</div>
+                  </el-form-item>
+                  <el-form-item label="请求方法">
+                    <el-select 
+                      v-model="selectedNodeConfig.method" 
+                      @change="updateNodeConfig"
+                      style="width: 100%;"
+                    >
+                      <el-option label="GET" value="GET"></el-option>
+                      <el-option label="POST" value="POST"></el-option>
+                    </el-select>
+                    <div class="el-form-item__help">选择HTTP请求方法</div>
+                  </el-form-item>
+                  <el-form-item label="请求Headers">
+                    <el-input 
+                      v-model="selectedNodeConfig.headers" 
+                      type="textarea"
+                      :rows="6"
+                      @input="updateNodeConfig"
+                      placeholder='例如：{"Content-Type": "application/json", "Authorization": "Bearer token123"}'
+                    ></el-input>
+                    <div class="el-form-item__help">JSON格式的请求头，例如：{"Content-Type": "application/json"}</div>
+                  </el-form-item>
+                  <el-form-item label="请求体（POST请求）" v-if="selectedNodeConfig.method === 'POST'">
+                    <el-input 
+                      v-model="selectedNodeConfig.requestBody" 
+                      type="textarea"
+                      :rows="8"
+                      @input="updateNodeConfig"
+                      placeholder='例如：{"key": "value", "number": 123}'
+                    ></el-input>
+                    <div class="el-form-item__help">JSON格式的请求体，仅POST请求需要填写</div>
+                  </el-form-item>
+                  <el-form-item label="输出变量名">
+                    <el-input 
+                      v-model="selectedNodeConfig.outputVariable" 
+                      @input="updateNodeConfig"
+                      placeholder="例如：httpResponse"
+                    ></el-input>
+                    <div class="el-form-item__help">HTTP响应内容将保存到此变量中</div>
+                  </el-form-item>
+                </template>
+                
                 <!-- 用户输入节点配置 -->
                 <template v-if="selectedNode.type === 'user_input'">
                   <el-form-item label="提示消息">
@@ -1421,6 +1472,15 @@ const onDrop = (event) => {
       newNode.config.inputVariable = 'query'
       newNode.config.outputVariable = 'knowledgeResult'
       newNode.config.topK = 3
+    }
+    
+    // HTTP调用节点默认配置
+    if (nodeType.type === 'http_call') {
+      newNode.config.url = ''
+      newNode.config.method = 'GET'
+      newNode.config.headers = '{}'
+      newNode.config.requestBody = ''
+      newNode.config.outputVariable = 'httpResponse'
     }
     
     nodes.value.push(newNode)

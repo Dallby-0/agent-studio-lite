@@ -26,6 +26,7 @@ import com.agentworkflow.service.WorkflowChatService;
 import com.agentworkflow.service.VectorStoreService;
 import com.agentworkflow.service.EmbeddingService;
 import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
@@ -42,6 +43,7 @@ public class StateMachineEngine {
     private WorkflowChatService chatService; // 对话服务，用于发送消息到对话界面
     private VectorStoreService vectorStoreService; // 向量存储服务，用于知识库检索
     private EmbeddingService embeddingService; // 向量化服务，用于文本向量化
+    private RestTemplate restTemplate; // HTTP客户端，用于HTTP调用节点
     
     // 存储等待用户输入的实例，key为instanceId，value为CompletableFuture<String>
     private final Map<Long, CompletableFuture<String>> pendingUserInputs = new ConcurrentHashMap<>();
@@ -51,6 +53,11 @@ public class StateMachineEngine {
     
     public StateMachineEngine(StateWorkflowMapper workflowMapper) {
         this.workflowMapper = workflowMapper;
+        // 初始化RestTemplate，设置超时
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10000); // 连接超时10秒
+        factory.setReadTimeout(60000); // 读取超时60秒
+        this.restTemplate = new RestTemplate(factory);
     }
     
     // 设置AI服务（通过setter注入，避免循环依赖）
@@ -1583,10 +1590,136 @@ public class StateMachineEngine {
     
     /**
      * 执行HTTP调用节点
+     * 支持GET/POST方法、自定义headers、JSON请求体、返回结果保存到变量
      */
     private NodeExecutionResult executeHttpCallNode(StateNode node) {
-        // TODO: 实现HTTP调用节点逻辑
+        System.out.println("\n========== 开始执行HTTP调用节点 ==========");
+        System.out.println("节点Key: " + node.getNodeKey());
+        System.out.println("节点名称: " + node.getName());
+        System.out.println("节点配置: " + node.getConfigJson());
+        
         NodeExecutionResult result = new NodeExecutionResult();
+        
+        try {
+            // 解析节点配置
+            Map<String, Object> config = jsonToMap(node.getConfigJson());
+            System.out.println("节点配置解析完成: " + config);
+            
+            // 获取配置参数
+            String url = (String) config.get("url");
+            String method = (String) config.getOrDefault("method", "GET");
+            String outputVariable = (String) config.getOrDefault("outputVariable", "httpResponse");
+            String requestBody = (String) config.get("requestBody"); // JSON格式的请求体
+            
+            // 解析headers（JSON字符串或Map）
+            Map<String, String> headers = new HashMap<>();
+            Object headersObj = config.get("headers");
+            if (headersObj != null) {
+                if (headersObj instanceof String) {
+                    // 如果是字符串，尝试解析JSON
+                    try {
+                        Map<String, Object> headersMap = jsonToMap((String) headersObj);
+                        for (Map.Entry<String, Object> entry : headersMap.entrySet()) {
+                            headers.put(entry.getKey(), entry.getValue().toString());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("警告: headers JSON解析失败: " + e.getMessage());
+                    }
+                } else if (headersObj instanceof Map) {
+                    // 如果已经是Map，直接转换
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> headersMap = (Map<String, Object>) headersObj;
+                    for (Map.Entry<String, Object> entry : headersMap.entrySet()) {
+                        headers.put(entry.getKey(), entry.getValue().toString());
+                    }
+                }
+            }
+            
+            // 验证必要参数
+            if (url == null || url.trim().isEmpty()) {
+                System.err.println("错误: URL未配置");
+                throw new IllegalArgumentException("URL is required");
+            }
+            
+            // 转换为大写的方法名
+            method = method.toUpperCase();
+            if (!"GET".equals(method) && !"POST".equals(method)) {
+                System.err.println("错误: 不支持的HTTP方法: " + method);
+                throw new IllegalArgumentException("Unsupported HTTP method: " + method + ". Only GET and POST are supported.");
+            }
+            
+            System.out.println("\n--- HTTP调用节点配置参数 ---");
+            System.out.println("URL: " + url);
+            System.out.println("方法: " + method);
+            System.out.println("输出变量名: " + outputVariable);
+            System.out.println("Headers: " + headers);
+            System.out.println("请求体: " + requestBody);
+            
+            // 构建HTTP请求
+            HttpHeaders httpHeaders = new HttpHeaders();
+            
+            // 设置默认Content-Type（POST请求需要）
+            if ("POST".equals(method) && !headers.containsKey("Content-Type")) {
+                httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            }
+            
+            // 添加自定义headers
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                httpHeaders.set(entry.getKey(), entry.getValue());
+            }
+            
+            // 构建请求实体
+            HttpEntity<String> entity;
+            if ("POST".equals(method)) {
+                String body = (requestBody != null && !requestBody.trim().isEmpty()) ? requestBody : "{}";
+                entity = new HttpEntity<>(body, httpHeaders);
+                System.out.println("\n--- 发送POST请求 ---");
+                System.out.println("请求体: " + body);
+            } else {
+                entity = new HttpEntity<>(httpHeaders);
+                System.out.println("\n--- 发送GET请求 ---");
+            }
+            
+            // 发送HTTP请求
+            System.out.println("正在发送HTTP请求...");
+            long requestStartTime = System.currentTimeMillis();
+            HttpMethod httpMethod = "POST".equals(method) ? HttpMethod.POST : HttpMethod.GET;
+            ResponseEntity<String> response = restTemplate.exchange(url, httpMethod, entity, String.class);
+            long requestDuration = System.currentTimeMillis() - requestStartTime;
+            
+            System.out.println("HTTP请求完成，耗时: " + requestDuration + "ms");
+            System.out.println("响应状态码: " + response.getStatusCode());
+            
+            // 获取响应体
+            String responseBody = response.getBody() != null ? response.getBody() : "";
+            
+            System.out.println("\n--- HTTP响应 ---");
+            System.out.println("响应状态码: " + response.getStatusCode());
+            System.out.println("响应体长度: " + responseBody.length());
+            if (responseBody.length() > 500) {
+                System.out.println("响应体预览（前500字符）: " + responseBody.substring(0, 500) + "...");
+            } else {
+                System.out.println("响应体: " + responseBody);
+            }
+            
+            // 将响应保存到全局变量
+            variableManager.setVariable(outputVariable, responseBody);
+            result.addUpdatedVariable(outputVariable, responseBody);
+            
+            System.out.println("✓ HTTP响应已保存到变量: " + outputVariable);
+            System.out.println("========== HTTP调用节点执行结束 ==========\n");
+            
+        } catch (Exception e) {
+            System.err.println("\n========== HTTP调用节点执行失败 ==========");
+            System.err.println("节点Key: " + node.getNodeKey());
+            System.err.println("节点名称: " + node.getName());
+            System.err.println("错误类型: " + e.getClass().getName());
+            System.err.println("错误信息: " + e.getMessage());
+            System.err.println("错误堆栈: ");
+            e.printStackTrace();
+            throw new RuntimeException("Failed to execute HTTP call node: " + node.getNodeKey(), e);
+        }
+        
         return result;
     }
     
