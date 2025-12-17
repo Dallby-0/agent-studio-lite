@@ -84,6 +84,44 @@ services:
       timeout: 3s
       retries: 3
 
+<<<<<<< Updated upstream
+=======
+  # 向量数据库（PostgreSQL + pgvector）
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: agent-studio-lite-pgvector
+    environment:
+      - POSTGRES_DB=vector_db
+      - POSTGRES_USER=vector_user
+      - POSTGRES_PASSWORD=vector_pass_123
+    # 生产环境不暴露端口
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+      - ./Database/pgvector-init:/docker-entrypoint-initdb.d
+    networks:
+      - agent-network
+    restart: always
+
+  # 文本向量化服务
+  embedding-service:
+    build:
+      context: ./Embedding-service
+      dockerfile: Dockerfile
+    container_name: agent-studio-lite-embedding
+    volumes:
+      # 挂载本地模型目录到容器，避免每次构建镜像
+      - ./Embedding-service/model:/app/model
+    networks:
+      - agent-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+>>>>>>> Stashed changes
 # 持久化卷
 volumes:
   mysql_data:

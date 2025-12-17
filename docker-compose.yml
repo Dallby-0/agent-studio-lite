@@ -143,6 +143,9 @@ services:
     build:
       context: ./Embedding-service
       dockerfile: Dockerfile
+    volumes:
+      # 挂载本地模型目录到容器，避免每次构建镜像
+      - ./Embedding-service/model:/app/model
     networks:
       - agent-network-test
     restart: unless-stopped

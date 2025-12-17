@@ -1,0 +1,123 @@
+# Spring Boot 3 应用配置文件 - 容器部署版本
+# 此配置文件用于 Docker 容器部署环境，使用容器服务名作为默认值
+# 使用方法：在 docker-compose.yml 中设置 SPRING_PROFILES_ACTIVE=container
+# 或者通过环境变量覆盖具体配置项
+
+# 日志配置
+logging:
+  level:
+    '[com.agentworkflow.config.JwtAuthenticationFilter]': INFO
+    '[org.springframework.security]': INFO
+
+# Spring配置
+spring:
+  # 允许循环依赖（开发环境临时解决方案）
+  main:
+    allow-circular-references: true
+  # 数据源配置 - MySQL
+  datasource:
+    # 容器环境：使用容器服务名（测试环境：mysql-test，生产环境：mysql）
+    url: jdbc:mysql://${MYSQL_HOST:mysql-test}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:agent_workflow}?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:workflow_user}
+    password: ${MYSQL_PASSWORD:workflow_pass_123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+  # 数据库初始化配置
+  sql:
+    init:
+      mode: never
+  # Redis配置 (Spring Boot 3默认使用Lettuce而不是Jedis)
+  # 暂时禁用Redis配置以解决启动问题
+  data:
+    redis:
+      # 容器环境：使用容器服务名（测试环境：redis-test，生产环境：redis）
+      host: ${REDIS_HOST:redis-test}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:workflow_redis123456}
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms  # 或者 PT-1S 表示不限制等待时间
+          max-idle: 8
+          min-idle: 0
+      timeout: 5000ms
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  # 国际化配置
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+
+# 服务器配置
+server:
+  port: 8080  # 服务器端口
+
+# MyBatis配置
+mybatis:
+  # 实体类包扫描路径
+  type-aliases-package: com.agentworkflow.entity
+  # mapper XML文件路径
+  mapper-locations: classpath*:mapper/**/*.xml
+  # 配置驼峰命名转换
+  configuration:
+    map-underscore-to-camel-case: true
+    # 显示SQL语句
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET:5f2b8a4c6d1e7g3h9i2j4k8l0m6n7o5p1q9r3s2t7u4v8w6x1y3z9abcdef1234567890abcdef1234567890}
+  expiration: 86400000  # 24小时，单位毫秒
+
+# CORS配置
+cors:
+  allowed-origins: "*"
+  allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+  allowed-headers: "*"
+
+# SpringDoc OpenAPI (Swagger)配置
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    # 自定义Swagger UI配置
+    config-url: /v3/api-docs/swagger-config
+    url: /v3/api-docs
+  # 配置要扫描的包路径，用于发现Controller
+  packages-to-scan: com.agentworkflow.controller
+  # 配置要匹配的路径模式
+  paths-to-match: /**
+
+# AI服务配置 - DeepSeek API
+ai:
+  deepseek:
+    api-key: ${DEEPSEEK_API_KEY:sk-f419c218ce5f4f6badf742558ef45176}
+    base-url: https://api.deepseek.com
+    model: deepseek-chat
+    max-tokens: 2048
+    temperature: 0.7
+
+# pgvector 向量数据库配置
+vector-db:
+  # 容器环境：使用容器服务名（测试环境：pgvector-test，生产环境：pgvector）
+  url: jdbc:postgresql://${VECTOR_DB_HOST:pgvector-test}:${VECTOR_DB_PORT:5432}/vector_db
+  username: ${VECTOR_DB_USER:vector_user}
+  password: ${VECTOR_DB_PASSWORD:vector_pass_123}
+
+# 本地 Embedding 服务配置
+embedding:
+  # 容器环境：使用容器服务名（embedding-service，容器内部端口 9000）
+  base-url: http://${EMBEDDING_SERVICE_HOST:embedding-service}:${EMBEDDING_SERVICE_PORT:9000}
+  model: BAAI/bge-small-zh-v1.5
+  dimension: 512
+
+  iot:
+    default-device-uuid: test  # TODO: 修改为你真实的设备UUID
+

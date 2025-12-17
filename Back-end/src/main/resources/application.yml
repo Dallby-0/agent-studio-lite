@@ -93,7 +93,7 @@ springdoc:
 # AI服务配置 - DeepSeek API
 ai:
   deepseek:
-    api-key: ${DEEPSEEK_API_KEY:sk-945737c05f2c4082910f44166114c926}
+    api-key: ${DEEPSEEK_API_KEY:sk-f419c218ce5f4f6badf742558ef45176}
     base-url: https://api.deepseek.com
     model: deepseek-chat
     max-tokens: 2048
@@ -101,12 +101,21 @@ ai:
 
 # pgvector 向量数据库配置
 vector-db:
+<<<<<<< Updated upstream
   url: ${VECTOR_DB_URL:jdbc:postgresql://localhost:5432/vector_db}
   username: ${VECTOR_DB_USERNAME:vector_user}
+=======
+  url: jdbc:postgresql://${VECTOR_DB_HOST:localhost}:${VECTOR_DB_PORT:5432}/vector_db
+  username: ${VECTOR_DB_USER:vector_user}
+>>>>>>> Stashed changes
   password: ${VECTOR_DB_PASSWORD:vector_pass_123}
 
 # 本地 Embedding 服务配置
 embedding:
+<<<<<<< Updated upstream
   base-url: http://localhost:10086
+=======
+  base-url: http://${EMBEDDING_SERVICE_HOST:localhost}:${EMBEDDING_SERVICE_PORT:10086}
+>>>>>>> Stashed changes
   model: BAAI/bge-small-zh-v1.5
   dimension: 512
