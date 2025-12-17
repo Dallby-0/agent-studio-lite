@@ -23,6 +23,11 @@ import com.agentworkflow.entity.StateExecutionLog;
 import com.agentworkflow.mapper.StateWorkflowMapper;
 import com.agentworkflow.service.AIService;
 import com.agentworkflow.service.WorkflowChatService;
+import com.agentworkflow.service.VectorStoreService;
+import com.agentworkflow.service.EmbeddingService;
+import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
 
 public class StateMachineEngine {
     
@@ -35,6 +40,8 @@ public class StateMachineEngine {
     private ObjectMapper objectMapper = new ObjectMapper();
     private AIService aiService; // AI服务，用于大模型调用
     private WorkflowChatService chatService; // 对话服务，用于发送消息到对话界面
+    private VectorStoreService vectorStoreService; // 向量存储服务，用于知识库检索
+    private EmbeddingService embeddingService; // 向量化服务，用于文本向量化
     
     // 存储等待用户输入的实例，key为instanceId，value为CompletableFuture<String>
     private final Map<Long, CompletableFuture<String>> pendingUserInputs = new ConcurrentHashMap<>();
@@ -61,6 +68,16 @@ public class StateMachineEngine {
         this.chatService = chatService;
         System.out.println("this.chatService: " + (this.chatService != null ? "已设置" : "仍为null"));
         System.out.println("========== StateMachineEngine.setChatService 调用结束 ==========\n");
+    }
+    
+    // 设置向量存储服务（通过setter注入，避免循环依赖）
+    public void setVectorStoreService(VectorStoreService vectorStoreService) {
+        this.vectorStoreService = vectorStoreService;
+    }
+    
+    // 设置向量化服务（通过setter注入，避免循环依赖）
+    public void setEmbeddingService(EmbeddingService embeddingService) {
+        this.embeddingService = embeddingService;
     }
     
     /**
@@ -507,6 +524,9 @@ public class StateMachineEngine {
                     break;
                 case "info_output":
                     result = executeInfoOutputNode(instance, node);
+                    break;
+                case "knowledge_query":
+                    result = executeKnowledgeQueryNode(instance, node);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported node type: " + node.getType());
@@ -1814,6 +1834,159 @@ public class StateMachineEngine {
             System.err.println("错误信息: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to execute info output node: " + node.getNodeKey(), e);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 执行知识库查询节点
+     * 根据输入的查询文本，在指定的知识库中进行向量检索，返回最相似的段落
+     */
+    private NodeExecutionResult executeKnowledgeQueryNode(StateWorkflowInstance instance, StateNode node) {
+        System.out.println("\n========== 开始执行知识库查询节点 ==========");
+        System.out.println("节点Key: " + node.getNodeKey());
+        System.out.println("节点名称: " + node.getName());
+        System.out.println("实例ID: " + instance.getId());
+        
+        NodeExecutionResult result = new NodeExecutionResult();
+        
+        try {
+            // 检查服务是否可用
+            if (vectorStoreService == null) {
+                System.err.println("错误: 向量存储服务未注入，无法执行知识库查询节点");
+                throw new IllegalStateException("Vector store service is not available");
+            }
+            if (embeddingService == null) {
+                System.err.println("错误: 向量化服务未注入，无法执行知识库查询节点");
+                throw new IllegalStateException("Embedding service is not available");
+            }
+            
+            // 解析节点配置
+            System.out.println("解析节点配置JSON...");
+            Map<String, Object> config = jsonToMap(node.getConfigJson());
+            System.out.println("节点配置: " + config);
+            
+            // 获取配置参数
+            Object knowledgeBaseIdObj = config.get("knowledgeBaseId");
+            String inputVariable = (String) config.getOrDefault("inputVariable", "query");
+            String outputVariable = (String) config.getOrDefault("outputVariable", "knowledgeResult");
+            Object topKObj = config.getOrDefault("topK", 3);
+            
+            // 解析知识库ID
+            Long knowledgeBaseId = null;
+            if (knowledgeBaseIdObj != null) {
+                if (knowledgeBaseIdObj instanceof Number) {
+                    knowledgeBaseId = ((Number) knowledgeBaseIdObj).longValue();
+                } else if (knowledgeBaseIdObj instanceof String) {
+                    try {
+                        knowledgeBaseId = Long.parseLong((String) knowledgeBaseIdObj);
+                    } catch (NumberFormatException e) {
+                        System.err.println("错误: 知识库ID格式不正确: " + knowledgeBaseIdObj);
+                        throw new IllegalArgumentException("Invalid knowledge base ID format: " + knowledgeBaseIdObj, e);
+                    }
+                }
+            }
+            
+            if (knowledgeBaseId == null) {
+                System.err.println("错误: 知识库ID未配置");
+                throw new IllegalArgumentException("Knowledge base ID is required");
+            }
+            
+            // 解析topK（段落数）
+            int topK = 3;
+            if (topKObj != null) {
+                if (topKObj instanceof Number) {
+                    topK = ((Number) topKObj).intValue();
+                } else if (topKObj instanceof String) {
+                    try {
+                        topK = Integer.parseInt((String) topKObj);
+                    } catch (NumberFormatException e) {
+                        System.err.println("警告: topK格式不正确，使用默认值3: " + topKObj);
+                        topK = 3;
+                    }
+                }
+            }
+            if (topK <= 0) {
+                System.err.println("警告: topK必须大于0，使用默认值3");
+                topK = 3;
+            }
+            
+            System.out.println("\n--- 知识库查询节点配置参数 ---");
+            System.out.println("知识库ID: " + knowledgeBaseId);
+            System.out.println("输入变量名: " + inputVariable);
+            System.out.println("输出变量名: " + outputVariable);
+            System.out.println("返回段落数: " + topK);
+            
+            // 从全局变量中获取查询文本
+            Map<String, Object> currentVariables = variableManager.getAllVariables();
+            Object queryObj = currentVariables.get(inputVariable);
+            
+            if (queryObj == null) {
+                System.err.println("错误: 输入变量 '" + inputVariable + "' 不存在");
+                throw new IllegalArgumentException("Input variable '" + inputVariable + "' not found in global variables");
+            }
+            
+            String queryText = queryObj.toString();
+            if (queryText == null || queryText.trim().isEmpty()) {
+                System.err.println("错误: 输入变量 '" + inputVariable + "' 的值为空");
+                throw new IllegalArgumentException("Input variable '" + inputVariable + "' is empty");
+            }
+            
+            System.out.println("\n--- 执行知识库查询 ---");
+            System.out.println("查询文本: " + queryText);
+            
+            // 将查询文本向量化
+            System.out.println("正在向量化查询文本...");
+            float[] queryEmbedding = embeddingService.embed(queryText);
+            if (queryEmbedding == null || queryEmbedding.length == 0) {
+                System.err.println("错误: 查询文本向量化失败");
+                throw new RuntimeException("Failed to embed query text");
+            }
+            System.out.println("向量化完成，向量维度: " + queryEmbedding.length);
+            
+            // 在知识库中检索相似段落
+            System.out.println("正在检索知识库，知识库ID: " + knowledgeBaseId + ", topK: " + topK);
+            List<VectorStoreService.SimilarChunk> chunks = vectorStoreService.searchTopK(knowledgeBaseId, queryEmbedding, topK);
+            
+            System.out.println("检索完成，找到 " + chunks.size() + " 个相似段落");
+            
+            // 将所有段落的文本内容合并为字符串（用换行符分隔）
+            StringBuilder resultBuilder = new StringBuilder();
+            for (int i = 0; i < chunks.size(); i++) {
+                VectorStoreService.SimilarChunk chunk = chunks.get(i);
+                if (i > 0) {
+                    resultBuilder.append("\n\n");
+                }
+                resultBuilder.append(chunk.getContent());
+            }
+            
+            String knowledgeResult = resultBuilder.toString();
+            
+            System.out.println("\n--- 查询结果 ---");
+            System.out.println("合并后的文本长度: " + knowledgeResult.length());
+            if (knowledgeResult.length() > 200) {
+                System.out.println("结果预览（前200字符）: " + knowledgeResult.substring(0, 200) + "...");
+            } else {
+                System.out.println("结果: " + knowledgeResult);
+            }
+            
+            // 将结果保存到全局变量
+            variableManager.setVariable(outputVariable, knowledgeResult);
+            result.addUpdatedVariable(outputVariable, knowledgeResult);
+            
+            System.out.println("✓ 查询结果已保存到变量: " + outputVariable);
+            System.out.println("========== 知识库查询节点执行结束 ==========\n");
+            
+        } catch (Exception e) {
+            System.err.println("\n========== 知识库查询节点执行失败 ==========");
+            System.err.println("节点Key: " + node.getNodeKey());
+            System.err.println("节点名称: " + node.getName());
+            System.err.println("错误类型: " + e.getClass().getName());
+            System.err.println("错误信息: " + e.getMessage());
+            System.err.println("错误堆栈: ");
+            e.printStackTrace();
+            throw new RuntimeException("Failed to execute knowledge query node: " + node.getNodeKey(), e);
         }
         
         return result;

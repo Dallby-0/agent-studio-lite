@@ -9,8 +9,10 @@
             <el-icon><ArrowLeft /></el-icon>
             返回列表
           </el-button>
-          <el-button type="warning" @click="resetWorkflow">重置</el-button>
-          <!-- 移除顶部保存按钮，避免与设计器内部按钮冲突 -->
+          <el-button type="primary" @click="saveFromHeader" :loading="isSaving">
+            <el-icon><Document /></el-icon>
+            保存工作流
+          </el-button>
           <el-button type="success" @click="runWorkflowHandler" :loading="isRunning">
             <el-icon><VideoPlay /></el-icon>
             运行工作流
@@ -21,6 +23,7 @@
       <!-- 工作流设计器组件 -->
       <div class="designer-wrapper">
         <WorkflowDesigner
+          ref="designerRef"
           :workflow="workflow"
           @save="onSaveWorkflow"
           @run="onRunWorkflow"
@@ -123,9 +126,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 // 导入Element Plus图标
-import { ArrowLeft, VideoPlay } from '@element-plus/icons-vue'
+import { ArrowLeft, Document, VideoPlay } from '@element-plus/icons-vue'
 
 import Layout from '../components/Layout.vue'
 import WorkflowDesigner from '../components/WorkflowDesigner.vue'
@@ -155,6 +158,7 @@ const workflow = ref({
 const isEditing = ref(false)
 const isSaving = ref(false)
 const isRunning = ref(false)
+const designerRef = ref(null)
 const showRunParamsDialog = ref(false)
 const runParams = reactive({
   name: '',
@@ -176,31 +180,6 @@ const showChatDialog = ref(false)
 // 返回列表
 const goBack = () => {
   router.push('/workflows')
-}
-
-// 重置工作流
-const resetWorkflow = () => {
-  ElMessageBox.confirm('确定要重置工作流吗？这将清除当前所有设计内容。', '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    workflow.value = {
-      id: workflow.value.id,
-      name: '',
-      description: '',
-      version: '1.0.0',
-      status: 1,
-      definition: {
-        nodes: [],
-        transitions: [],
-        globalVariables: []
-      }
-    }
-    ElMessage.success('工作流已重置')
-  }).catch(() => {
-    // 取消操作，不做任何处理
-  })
 }
 
 // 加载工作流定义
@@ -352,6 +331,17 @@ const saveWorkflow = () => {
     return
   }
   onSaveWorkflow(workflow.value)
+}
+
+// 顶部保存按钮触发设计器内部保存逻辑，保证格式一致
+const saveFromHeader = () => {
+  // 优先触发设计器内部的验证与构建逻辑
+  if (designerRef.value && typeof designerRef.value.saveWorkflow === 'function') {
+    designerRef.value.saveWorkflow()
+    return
+  }
+  // 兜底：使用现有数据直接保存
+  saveWorkflow()
 }
 
 // 处理保存工作流事件
