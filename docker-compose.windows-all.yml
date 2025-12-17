@@ -21,7 +21,7 @@ services:
     ports:
       - "81:80"
     depends_on:
-      - backend
+      - backend-test
     networks:
       - agent-network
     restart: unless-stopped
@@ -33,7 +33,7 @@ services:
       start_period: 5s
 
   # 后端服务
-  backend:
+  backend-test:
     build:
       context: ./Back-end
       dockerfile: Dockerfile
