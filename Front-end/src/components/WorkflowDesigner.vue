@@ -43,6 +43,8 @@
         @dragover.prevent="onDragOver"
         @drop.prevent="onDrop"
         @mousedown="onCanvasMouseDown"
+        @mousemove="onCanvasMouseMove"
+        @mouseup="onCanvasMouseUp"
         @wheel.prevent="onCanvasWheel"
       >
         <div 
@@ -1720,20 +1722,30 @@ const onNodeMouseDown = (event, node) => {
 }
 
 // --- 优化后的画布按下事件 ---
+// 画布鼠标事件
 const onCanvasMouseDown = (event) => {
-  // 如果正在连接，则不处理画布拖拽
-  if (isConnecting.value) return
-
+  // 如果点击的是画布空白区域（不是节点、端口等），开始拖拽
   const target = event.target
-  // 排除点击在节点内部或连接点上的情况
-  const isBackground = target === canvasContainer.value ||
+  const isCanvasElement = target === canvasContainer.value ||
+      target.classList.contains('canvas') ||
       target.classList.contains('grid-background') ||
-      target.tagName === 'svg'
+      target.classList.contains('connections-layer') ||
+      target.tagName === 'svg' ||
+      target.tagName === 'path' && !target.closest('.workflow-node')
 
-  if (isBackground && event.button === 0) {
+  if (isCanvasElement && event.button === 0) { // 左键
+    // 如果点击的是连接线，选择连接线而不是拖拽
+    if (target.tagName === 'path') {
+      return
+    }
+
     selectedNode.value = null
     selectedEdge.value = null
+    if (isConnecting.value) {
+      cancelConnection()
+    }
 
+    // 开始画布拖拽
     isDraggingCanvas.value = true
     canvasDragStart.value = {
       x: event.clientX - canvasOffset.value.x,
@@ -1742,6 +1754,7 @@ const onCanvasMouseDown = (event) => {
     event.preventDefault()
   }
 }
+
 
 const onCanvasMouseMove = (event) => {
   if (!canvasContainer.value) return
