@@ -87,6 +87,18 @@
                 class="edge-delete-btn"
                 @click.stop="deleteEdge(edge)"
               />
+              <!-- 极简X删除按钮（仅选中时显示） -->
+              <text
+                  v-if="selectedEdge?.id === edge.id"
+                  :x="getEdgeMidX(edge)"
+                  :y="getEdgeMidY(edge)"
+                  text-anchor="middle"
+                  dominant-baseline="middle"
+                  class="edge-delete-x"
+                  @click.stop="deleteEdge(edge)"
+              >
+                ×
+              </text>
             </g>
             
             <!-- 正在创建的连接线预览 -->
@@ -2610,6 +2622,14 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 
 .edge-delete-btn:hover {
   r: 10;
+}
+
+.edge-delete-x {
+  /* 基础样式 */
+  fill: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 /* 工作流节点 */
