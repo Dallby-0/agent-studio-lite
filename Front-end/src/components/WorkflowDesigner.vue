@@ -43,8 +43,6 @@
         @dragover.prevent="onDragOver"
         @drop.prevent="onDrop"
         @mousedown="onCanvasMouseDown"
-        @mousemove="onCanvasMouseMove"
-        @mouseup="onCanvasMouseUp"
         @wheel.prevent="onCanvasWheel"
       >
         <div 
@@ -1272,28 +1270,22 @@ const removeOutputPort = (node, index) => {
 const getPortWorldPosition = (node, portType, portIndex) => {
   const nodeX = node.positionX
   const nodeY = node.positionY
-  
+  const nodeH = isBranchNode(node.type) ? getBranchNodeHeight(node) : nodeHeight
+
   let portX, portY
-  
-  // 获取端口中心Y坐标
-  const portCenterY = portType === 'input' 
-    ? getInputPortY(node, portIndex)
-    : getOutputPortY(node, portIndex)
-  
+
   if (portType === 'input') {
-    // 输入端口：连接线从节点左边缘开始（端口在左侧，圆圈中心在节点边缘）
-    // 输入端口也需要向下偏移13px以对齐
     portX = nodeX
-    portY = nodeY + portCenterY + 13
+    portY = nodeY + (nodeH / 2) // 输入点通常在左侧垂直居中
   } else {
-    // 输出端口：连接线从节点右边缘开始（端口在右侧，圆圈中心在节点边缘）
-    // 我人工把偏移量改成了13  这样对于所有节点正好对齐
-    const connectionOffset = 13
     portX = nodeX + nodeWidth
-    portY = nodeY + portCenterY + connectionOffset
+    portY = nodeY + getOutputPortY(node, portIndex)
   }
-  
-  return { x: portX, y: portY }
+
+  // 如果你的 .port 容器有 CSS 偏移（比如通过 transform 居中），
+  // 请确保这里的计算与其中心点物理位置一致。
+  // 加上你提到的 13px 修正（如果是为了修正 node-header 的高度偏移）
+  return { x: portX, y: portY + 13 }
 }
 
 // 判断是否是反向连接（出口在入口右侧，即从右往左的连接）
@@ -1695,49 +1687,53 @@ const deleteNode = (node) => {
   ElMessage.success('节点已删除')
 }
 
-// 节点拖拽
+// --- 辅助函数：将屏幕坐标转换为画布空间坐标 ---
+const screenToCanvasCoords = (clientX, clientY) => {
+  const canvasRect = canvasContainer.value.getBoundingClientRect()
+  return {
+    x: (clientX - canvasRect.left - canvasOffset.value.x) / zoomLevel.value,
+    y: (clientY - canvasRect.top - canvasOffset.value.y) / zoomLevel.value
+  }
+}
+
+// --- 优化后的节点按下事件 ---
 const onNodeMouseDown = (event, node) => {
   if (isConnecting.value) return
-  
+
+  // 阻止冒泡，防止触发画布的 onCanvasMouseDown
   event.stopPropagation()
+
+  // 仅响应左键
+  if (event.button !== 0) return
+
   isDraggingNode.value = true
   dragNode.value = node
-  
-  const canvasRect = canvasContainer.value.getBoundingClientRect()
-  const nodeRect = event.currentTarget.getBoundingClientRect()
-  // 考虑画布偏移和缩放
+
+  // 计算点击位置相对于节点左上角的偏移量（在画布坐标系下）
+  const mousePos = screenToCanvasCoords(event.clientX, event.clientY)
   dragOffset.value = {
-    x: (event.clientX - canvasRect.left - canvasOffset.value.x) / zoomLevel.value - node.positionX,
-    y: (event.clientY - canvasRect.top - canvasOffset.value.y) / zoomLevel.value - node.positionY
+    x: mousePos.x - node.positionX,
+    y: mousePos.y - node.positionY
   }
-  
+
   selectNode(node)
 }
 
-// 画布鼠标事件
+// --- 优化后的画布按下事件 ---
 const onCanvasMouseDown = (event) => {
-  // 如果点击的是画布空白区域（不是节点、端口等），开始拖拽
+  // 如果正在连接，则不处理画布拖拽
+  if (isConnecting.value) return
+
   const target = event.target
-  const isCanvasElement = target === canvasContainer.value || 
-                          target.classList.contains('canvas') ||
-                          target.classList.contains('grid-background') ||
-                          target.classList.contains('connections-layer') ||
-                          target.tagName === 'svg' ||
-                          target.tagName === 'path' && !target.closest('.workflow-node')
-  
-  if (isCanvasElement && event.button === 0) { // 左键
-    // 如果点击的是连接线，选择连接线而不是拖拽
-    if (target.tagName === 'path') {
-    return
-  }
-  
+  // 排除点击在节点内部或连接点上的情况
+  const isBackground = target === canvasContainer.value ||
+      target.classList.contains('grid-background') ||
+      target.tagName === 'svg'
+
+  if (isBackground && event.button === 0) {
     selectedNode.value = null
     selectedEdge.value = null
-    if (isConnecting.value) {
-      cancelConnection()
-    }
-    
-    // 开始画布拖拽
+
     isDraggingCanvas.value = true
     canvasDragStart.value = {
       x: event.clientX - canvasOffset.value.x,
@@ -1789,21 +1785,46 @@ const onCanvasMouseUp = (event) => {
   }
 }
 
-// 全局鼠标事件处理（用于画布拖拽）
+// --- 统一的鼠标移动处理 ---
 const onGlobalMouseMove = (event) => {
+  if (!canvasContainer.value) return
+
+  // 1. 处理画布平移
   if (isDraggingCanvas.value) {
     canvasOffset.value = {
       x: event.clientX - canvasDragStart.value.x,
       y: event.clientY - canvasDragStart.value.y
     }
-    event.preventDefault()
+    return
+  }
+
+  // 2. 处理节点拖拽
+  if (isDraggingNode.value && dragNode.value) {
+    const mousePos = screenToCanvasCoords(event.clientX, event.clientY)
+
+    // 应用偏移量并更新位置
+    dragNode.value.positionX = mousePos.x - dragOffset.value.x
+    dragNode.value.positionY = mousePos.y - dragOffset.value.y
+
+    // 限制节点不移出画布边界（可选，画布很大时通常不需要）
+    // dragNode.value.positionX = Math.max(0, dragNode.value.positionX)
+    // dragNode.value.positionY = Math.max(0, dragNode.value.positionY)
+
+    return
+  }
+
+  // 3. 处理连线预览（原本逻辑）
+  if (isConnecting.value) {
+    const mousePos = screenToCanvasCoords(event.clientX, event.clientY)
+    mousePosition.value = mousePos
   }
 }
 
-const onGlobalMouseUp = (event) => {
-  if (isDraggingCanvas.value) {
-    isDraggingCanvas.value = false
-  }
+// --- 统一的鼠标松开处理 ---
+const onGlobalMouseUp = () => {
+  isDraggingNode.value = false
+  dragNode.value = null
+  isDraggingCanvas.value = false
 }
 
 // 画布滚轮缩放
@@ -2488,10 +2509,10 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 /* 画布容器 */
 .canvas-container {
   flex: 1;
-  overflow: auto;
   background-color: #fafafa;
   position: relative;
   cursor: default;
+  overflow: hidden; /* 建议隐藏原生滚动条，完全依赖平移 */
 }
 
 .canvas {
@@ -2589,10 +2610,11 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   cursor: move;
   z-index: 2;
-  transition: all 0.2s;
   display: flex;
   flex-direction: column;
   overflow: visible;
+  user-select: none; /* 防止拖拽时选中文字 */
+  will-change: transform, left, top; /* 开启硬件加速 */
 }
 
 .workflow-node:hover {
