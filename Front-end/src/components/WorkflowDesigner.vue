@@ -10,6 +10,8 @@
           style="width: 200px; margin-right: 12px;"
         ></el-input>
       </div>
+      <el-button type="primary" @click="saveWorkflow">保存工作流</el-button>
+      <el-button @click="runWorkflow">运行工作流</el-button>
       <div class="toolbar-right">
         <el-button @click="zoomIn" size="small">放大</el-button>
         <el-button @click="zoomOut" size="small">缩小</el-button>
@@ -50,8 +52,6 @@
         <div 
           class="canvas"
           :style="{ 
-            width: `${canvasWidth}px`,
-            height: `${canvasHeight}px`,
             transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px) scale(${zoomLevel})`, 
             transformOrigin: 'top left' 
           }"
@@ -618,57 +618,6 @@
                   </div>
                 </template>
                 
-                <!-- 知识库查询节点配置 -->
-                <template v-if="selectedNode.type === 'knowledge_query'">
-                  <el-form-item label="知识库">
-                    <el-select 
-                      v-model="selectedNodeConfig.knowledgeBaseId" 
-                      @change="updateNodeConfig"
-                      placeholder="请选择知识库"
-                      style="width: 100%;"
-                    >
-                      <el-option
-                        v-for="kb in knowledgeBases"
-                        :key="kb.id"
-                        :label="kb.name"
-                        :value="kb.id"
-                      >
-                        <span>{{ kb.name }}</span>
-                        <span style="color: #8492a6; font-size: 12px; margin-left: 8px;" v-if="kb.description">
-                          ({{ kb.description }})
-                        </span>
-                      </el-option>
-                    </el-select>
-                    <div class="el-form-item__help">选择要查询的知识库</div>
-                  </el-form-item>
-                  <el-form-item label="输入变量名">
-                    <el-input 
-                      v-model="selectedNodeConfig.inputVariable" 
-                      @input="updateNodeConfig"
-                      placeholder="例如：query"
-                    ></el-input>
-                    <div class="el-form-item__help">从全局变量中读取查询文本的变量名</div>
-                  </el-form-item>
-                  <el-form-item label="输出变量名">
-                    <el-input 
-                      v-model="selectedNodeConfig.outputVariable" 
-                      @input="updateNodeConfig"
-                      placeholder="例如：knowledgeResult"
-                    ></el-input>
-                    <div class="el-form-item__help">查询结果将保存到此变量中</div>
-                  </el-form-item>
-                  <el-form-item label="返回段落数">
-                    <el-input-number 
-                      v-model="selectedNodeConfig.topK" 
-                      @change="updateNodeConfig"
-                      :min="1"
-                      :max="20"
-                      placeholder="例如：3"
-                    ></el-input-number>
-                    <div class="el-form-item__help">返回最相似的段落数量（1-20）</div>
-                  </el-form-item>
-                </template>
-                
                 <!-- 赋值节点配置 -->
                 <template v-if="selectedNode.type === 'assign'">
                   <el-divider>赋值语句列表</el-divider>
@@ -719,57 +668,6 @@
                       <p>暂无赋值语句，点击添加按钮创建</p>
                     </div>
                   </div>
-                </template>
-                
-                <!-- HTTP调用节点配置 -->
-                <template v-if="selectedNode.type === 'http_call'">
-                  <el-form-item label="请求URL">
-                    <el-input 
-                      v-model="selectedNodeConfig.url" 
-                      @input="updateNodeConfig"
-                      placeholder="例如：https://api.example.com/data"
-                    ></el-input>
-                    <div class="el-form-item__help">要请求的完整URL地址</div>
-                  </el-form-item>
-                  <el-form-item label="请求方法">
-                    <el-select 
-                      v-model="selectedNodeConfig.method" 
-                      @change="updateNodeConfig"
-                      style="width: 100%;"
-                    >
-                      <el-option label="GET" value="GET"></el-option>
-                      <el-option label="POST" value="POST"></el-option>
-                    </el-select>
-                    <div class="el-form-item__help">选择HTTP请求方法</div>
-                  </el-form-item>
-                  <el-form-item label="请求Headers">
-                    <el-input 
-                      v-model="selectedNodeConfig.headers" 
-                      type="textarea"
-                      :rows="6"
-                      @input="updateNodeConfig"
-                      placeholder='例如：{"Content-Type": "application/json", "Authorization": "Bearer token123"}'
-                    ></el-input>
-                    <div class="el-form-item__help">JSON格式的请求头，例如：{"Content-Type": "application/json"}</div>
-                  </el-form-item>
-                  <el-form-item label="请求体（POST请求）" v-if="selectedNodeConfig.method === 'POST'">
-                    <el-input 
-                      v-model="selectedNodeConfig.requestBody" 
-                      type="textarea"
-                      :rows="8"
-                      @input="updateNodeConfig"
-                      placeholder='例如：{"key": "value", "number": 123}'
-                    ></el-input>
-                    <div class="el-form-item__help">JSON格式的请求体，仅POST请求需要填写</div>
-                  </el-form-item>
-                  <el-form-item label="输出变量名">
-                    <el-input 
-                      v-model="selectedNodeConfig.outputVariable" 
-                      @input="updateNodeConfig"
-                      placeholder="例如：httpResponse"
-                    ></el-input>
-                    <div class="el-form-item__help">HTTP响应内容将保存到此变量中</div>
-                  </el-form-item>
                 </template>
                 
                 <!-- 用户输入节点配置 -->
@@ -885,7 +783,6 @@
 import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete, Plus, Close } from '@element-plus/icons-vue'
-import knowledgeApi from '../api/knowledge'
 
 // Props
 const props = defineProps({
@@ -911,8 +808,7 @@ const nodeTypes = [
   { type: 'workflow_call', label: '工作流调用', icon: '🔗' },
   { type: 'http_call', label: 'HTTP调用', icon: '🌐' },
   { type: 'user_input', label: '用户输入', icon: '👤' },
-  { type: 'info_output', label: '信息输出', icon: '💬' },
-  { type: 'knowledge_query', label: '知识库查询', icon: '📚' }
+  { type: 'info_output', label: '信息输出', icon: '💬' }
 ]
 
 // 常量
@@ -920,9 +816,8 @@ const nodeWidth = 180
 const nodeHeight = 80
 const portSize = 12
 const portSpacing = 30
-// 画布尺寸放大，降低边界感；结合拖拽偏移实现“近似无界”画布
-const canvasWidth = 20000
-const canvasHeight = 20000
+const canvasWidth = 5000
+const canvasHeight = 5000
 
 // 状态管理
 const nodes = ref([])
@@ -940,7 +835,6 @@ const connectionsLayer = ref(null)
 const selectedNodeConfig = ref({})
 const globalVariables = ref([])
 const branchConditions = ref([]) // 分支节点的条件表达式数组
-const knowledgeBases = ref([]) // 知识库列表
 
 // 工作流基本信息状态
 const workflowName = ref(props.workflow.name || '')
@@ -1430,9 +1324,8 @@ const onDrop = (event) => {
       nodeKey: `${nodeType.type}_${Date.now()}`,
       name: `${nodeType.label} ${nodes.value.length + 1}`,
       type: nodeType.type,
-      // 允许负坐标以支持无限画布，不再限制到左上角
-      positionX: x,
-      positionY: y,
+      positionX: Math.max(0, x),
+      positionY: Math.max(0, y),
       config: {}
     }
     
@@ -1470,23 +1363,6 @@ const onDrop = (event) => {
       newNode.config.historyKey = 'default'
       newNode.config.saveToHistory = false
       newNode.config.historyNickname = '系统'
-    }
-    
-    // 知识库查询节点默认配置
-    if (nodeType.type === 'knowledge_query') {
-      newNode.config.knowledgeBaseId = null
-      newNode.config.inputVariable = 'query'
-      newNode.config.outputVariable = 'knowledgeResult'
-      newNode.config.topK = 3
-    }
-    
-    // HTTP调用节点默认配置
-    if (nodeType.type === 'http_call') {
-      newNode.config.url = ''
-      newNode.config.method = 'GET'
-      newNode.config.headers = '{}'
-      newNode.config.requestBody = ''
-      newNode.config.outputVariable = 'httpResponse'
     }
     
     nodes.value.push(newNode)
@@ -1792,9 +1668,8 @@ const onCanvasMouseMove = (event) => {
   
   // 处理节点拖拽 - 使用requestAnimationFrame确保同步更新
   if (isDraggingNode.value && dragNode.value) {
-    // 不再限制到(0,0)，允许向左/上拖动形成无界画布
-    dragNode.value.positionX = newMousePos.x - dragOffset.value.x
-    dragNode.value.positionY = newMousePos.y - dragOffset.value.y
+    dragNode.value.positionX = Math.max(0, newMousePos.x - dragOffset.value.x)
+    dragNode.value.positionY = Math.max(0, newMousePos.y - dragOffset.value.y)
     // 强制触发响应式更新，确保连接线实时跟随
     nextTick(() => {
       // 连接线路径会在getEdgePath中自动重新计算
@@ -2178,19 +2053,6 @@ const removeLlmBranch = (index) => {
 }
 
 // 保存工作流
-// 加载知识库列表
-const loadKnowledgeBases = async () => {
-  try {
-    const response = await knowledgeApi.listKnowledgeBases()
-    if (response && response.data) {
-      knowledgeBases.value = response.data
-    }
-  } catch (error) {
-    console.error('加载知识库列表失败:', error)
-    ElMessage.warning('加载知识库列表失败')
-  }
-}
-
 const saveWorkflow = () => {
   // 验证工作流
   if (!workflowName.value.trim()) {
@@ -2298,12 +2160,6 @@ const runWorkflow = () => {
   ElMessage.success('工作流已开始运行')
 }
 
-// 对外暴露接口，便于父组件触发保存
-defineExpose({
-  saveWorkflow,
-  runWorkflow
-})
-
 // 解析transitions并分配端口索引的辅助函数
 const parseTransitions = (transitions, nodesList) => {
   if (!Array.isArray(transitions)) return []
@@ -2355,9 +2211,6 @@ const parseTransitions = (transitions, nodesList) => {
 
 // 初始化工作流
 onMounted(() => {
-  // 加载知识库列表
-  loadKnowledgeBases()
-  
   // 初始化工作流基本信息
   if (props.workflow) {
     workflowName.value = props.workflow.name || ''
@@ -2534,16 +2387,17 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 /* 画布容器 */
 .canvas-container {
   flex: 1;
-  background-color: #fafafa;
+  background-color: rgba(250, 250, 250, 0.24);
   position: relative;
   cursor: default;
   overflow: hidden; /* 建议隐藏原生滚动条，完全依赖平移 */
 }
 
 .canvas {
-  /* 尺寸由内联样式控制，这里仅保留基础定位 */
+  width: 3000px;
+  height: 3000px;
   position: relative;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.16);
 }
 
 /* 网格背景 */
@@ -2555,7 +2409,7 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
   background-image: 
     linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-  background-position: 0 0;
+  background-position: -10 -10;
   pointer-events: none;
 }
 
@@ -2581,22 +2435,25 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 
 .connection-line:hover {
   stroke: #409eff;
-  stroke-width: 3px;
+  stroke-width: 4px;
 }
 
 .connection-line-selected {
   stroke: #409eff;
   stroke-width: 3px;
+  transition: stroke-width 0.3s;
 }
 
 /* 反向连接线（入口在出口右侧）- 使用虚线 */
 .connection-line-reverse {
   stroke-dasharray: 5, 5;
+  stroke-width: 5px;
   stroke: #909399;
 }
 
 .connection-line-reverse:hover {
   stroke: #409eff;
+  stroke-width: 5px;
   stroke-dasharray: 5, 5;
 }
 
@@ -2637,9 +2494,9 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
   position: absolute;
   width: 180px;
   min-height: 80px;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
   border: 2px solid #dcdfe6;
-  border-radius: 8px;
+  border-radius: 15px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   cursor: move;
   z-index: 2;
@@ -2655,8 +2512,10 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 }
 
 .workflow-node.node-selected {
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.4);
+  scale:110%;
+  transition: scale 0.3s;
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.15);
 }
 
 .workflow-node.branch-node {
@@ -2813,14 +2672,14 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
   display: flex;
   align-items: center;
   padding: 12px 8px;
-  border-bottom: 1px solid #e0e0e0;
-  background-color: rgba(240, 240, 240, 0.5);
+  border-bottom: 1px solid rgba(224, 224, 224, 0);
+  background-color: rgba(240, 240, 240, 0.0);
   border-radius: 8px 8px 0 0;
 }
 
 .node-type-icon {
   font-size: 18px;
-  margin-right: 8px;
+  margin-right: 15px;
 }
 
 .node-name {
@@ -2835,8 +2694,8 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 .node-type {
   padding: 8px;
   font-size: 12px;
-  color: #606266;
-  background-color: rgba(0, 0, 0, 0.03);
+  color: #232121;
+  background-color: rgba(0, 0, 0, 0.0);
   text-align: center;
 }
 
