@@ -1178,7 +1178,6 @@ const removeOutputPort = (node, index) => {
 const getPortWorldPosition = (node, portType, portIndex) => {
   const nodeX = node.positionX
   const nodeY = node.positionY
-  const nodeH = isBranchNode(node.type) ? getBranchNodeHeight(node) : nodeHeight
 
   let portX, portY
 
