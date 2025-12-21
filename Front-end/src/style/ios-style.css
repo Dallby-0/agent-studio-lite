@@ -1,0 +1,65 @@
+/* 全局苹果风格ElMessage样式 */
+.el-message {
+    position: fixed;
+    top: 20px;
+    right: 50%;
+    transform: translateX(50%);
+    max-width: 200px;
+    width: calc(100% - 40px);
+    padding: 16px 20px;
+    margin: 0;
+    border: none;
+    border-radius: 16px;
+    background-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+}
+
+.el-message__wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.el-message__icon {
+    font-size: 20px;
+    margin-right: 20px;
+    color: rgba(111, 127, 143, 0.2);
+}
+
+.el-message__content {
+    font-size: 15px;
+    color: rgba(145, 145, 145, 0.15);
+    line-height: 1.4;
+    flex: 1;
+}
+
+.el-message__closeBtn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 20px;
+    height: 20px;
+    font-size: 16px;
+    color: #8e8e93;
+    opacity: 1;
+    transition: color 0.2s ease;
+}
+
+.el-message__closeBtn:hover {
+    color: #1c1c1e;
+}
+
+/* 不同类型配色 */
+.el-message--success .el-message__icon {
+    color: #34c759;
+}
+.el-message--warning .el-message__icon {
+    color: #ff9500;
+}
+.el-message--error .el-message__icon {
+    color: #ff3b30;
+}
+.el-message--info .el-message__icon {
+    color: #007aff;
+}

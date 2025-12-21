@@ -942,7 +942,7 @@ const getOutputPortY = (node, index) => {
     const nodeH = isBranchNode(node.type) ? getBranchNodeHeight(node) : nodeHeight
     return nodeH / 2
   }
-  
+
   if (isBranchNode(node.type)) {
     // 分支节点：端口与条件表达式对齐
     const headerHeight = 60 // 节点头部高度
@@ -950,7 +950,7 @@ const getOutputPortY = (node, index) => {
     const conditionItemHeight = 32 // 每个条件表达式项的高度
     // 第一个条件表达式的顶部位置，减去2.5行的偏移（80px）以修正对齐
     const firstConditionTop = headerHeight + nodeTypeHeight - 80
-    
+
     // 计算每个端口的Y坐标，使其与对应的条件表达式中心对齐
     // 条件表达式项的中心 = 顶部 + 高度/2，端口圆圈中心应该对齐到这里
     // 往下移动2.5行（85px）以对齐表达式
@@ -967,13 +967,13 @@ const getOutputPortY = (node, index) => {
 // 获取条件表达式项的Y坐标（用于对齐，相对于node-content顶部）
 const getConditionItemY = (node, index) => {
   if (!isBranchNode(node.type)) return 0
-  
+
   const headerHeight = 60 // 节点头部高度（padding 12px + 内容约36px）
   const nodeTypeHeight = 30 // node-type 区域高度（padding 8px + 文字约14px）
   const conditionItemHeight = 32 // 每个条件表达式项的高度
   // 第一个条件表达式的顶部位置 = 头部 + node-type，减去2.5行的偏移（80px）
   const firstConditionTop = headerHeight + nodeTypeHeight - 80
-  
+
   return firstConditionTop + (index * conditionItemHeight)
 }
 
@@ -1033,7 +1033,7 @@ const insertBasicBranch = (insertIndex, targetNode = selectedNode.value) => {
       edge.fromPortIndex += 1
     }
   })
-  
+
   ElMessage.success('已添加分支')
 }
 
@@ -1184,7 +1184,7 @@ const getPortWorldPosition = (node, portType, portIndex) => {
 
   if (portType === 'input') {
     portX = nodeX
-    portY = nodeY + (nodeH / 2) // 输入点通常在左侧垂直居中
+    portY = nodeY + 40 // 输入点通常在左侧垂直居中
   } else {
     portX = nodeX + nodeWidth
     portY = nodeY + getOutputPortY(node, portIndex)
@@ -2702,8 +2702,7 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 /* 分支节点条件表达式显示 */
 .branch-conditions {
   position: relative;
-  min-height: 0;
-  background-color: rgba(64, 158, 255, 0.05);
+    min-height: 0;
   border-radius: 4px;
   flex: 1;
 }
