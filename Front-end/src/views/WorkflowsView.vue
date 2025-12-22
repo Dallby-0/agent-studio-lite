@@ -22,12 +22,12 @@
         
         <el-table :data="workflows" style="width: 100%">
           <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="name" label="工作流名称" min-width="200">
+          <el-table-column prop="name" label="工作流名称" min-width="150">
             <template #default="scope">
               <el-link type="primary" @click="editWorkflow(scope.row)">{{ scope.row.name }}</el-link>
             </template>
           </el-table-column>
-          <el-table-column prop="description" label="描述" min-width="250" show-overflow-tooltip />
+          <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
           <el-table-column prop="version" label="版本" width="100" />
           <el-table-column prop="status" label="状态" width="100">
             <template #default="scope">
@@ -36,12 +36,20 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" width="180" />
-          <el-table-column prop="updatedAt" label="更新时间" width="180" />
-          <el-table-column label="操作" width="150" fixed="right">
+          <el-table-column prop="createdAt" label="创建时间" width="200">
             <template #default="scope">
-              <el-button type="primary" size="small" @click="editWorkflow(scope.row)">编辑</el-button>
-              <el-button type="danger" size="small" @click="deleteWorkflowHandler(scope.row.id)">删除</el-button>
+              {{resetTimeShow(scope.row.createdAt)}}
+            </template>
+          </el-table-column>
+          <el-table-column prop="updatedAt" label="更新时间" width="200">
+            <template #default="scope">
+              {{resetTimeShow(scope.row.updatedAt)}}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="scope">
+              <el-button type="primary" plain size="small" @click="editWorkflow(scope.row)">编辑</el-button>
+              <el-button type="danger" plain size="small" @click="deleteWorkflowHandler(scope.row.id)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -119,6 +127,37 @@ const loadWorkflows = () => {
     total.value = mockWorkflows.length
   })
 }
+
+//重设时间显示
+const resetTimeShow = (str) => {
+  // 容错处理
+  if (!str || typeof str !== 'string') {
+    return str || '';
+  }
+
+  // 1. 解析为日期对象（识别ISO格式的+00:00时区）
+  const date = new Date(str);
+  // 验证日期是否有效
+  if (isNaN(date.getTime())) {
+    return str;
+  }
+
+  // 2. 小时增加8小时（核心：通过毫秒数操作，自动处理跨天/跨月/跨年）
+  date.setTime(date.getTime() + 8 * 60 * 60 * 1000); // 8小时 = 8*60*60*1000 毫秒
+
+  // 3. 补零工具函数：确保个位数转为两位数
+  const padZero = (num) => num.toString().padStart(2, '0');
+
+  // 4. 提取处理后的UTC时间（匹配原时区偏移，避免本地时区干扰）
+  const year = date.getUTCFullYear();
+  const month = padZero(date.getUTCMonth() + 1); // 月份从0开始，需+1
+  const day = padZero(date.getUTCDate());
+  const hour = padZero(date.getUTCHours()); // 已增加8小时后的小时数
+  const minute = padZero(date.getUTCMinutes());
+
+  // 5. 拼接目标格式
+  return `${year}年${month}月${day}日-${hour}:${minute}`;
+};
 
 // 创建工作流
 const createWorkflow = () => {

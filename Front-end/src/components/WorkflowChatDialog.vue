@@ -3,6 +3,7 @@
     v-model="visible"
     title="工作流对话"
     width="800px"
+    :modal="false"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     :z-index="3000"

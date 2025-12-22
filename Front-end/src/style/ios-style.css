@@ -4,8 +4,6 @@
     top: 20px;
     right: 50%;
     transform: translateX(50%);
-    max-width: 200px;
-    width: calc(100% - 40px);
     padding: 16px 20px;
     margin: 0;
     border: none;
@@ -13,6 +11,25 @@
     background-color: rgba(255, 255, 255, 0.2);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
     overflow: hidden;
+}
+
+.el-dialog{
+    border-radius: 16px;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+    /* 半透明背景（关键，不可缺少） */
+    background-color: rgba(255, 255, 255, 0.7);
+    /* 辅助样式：提升质感 */
+    border: 3px solid rgba(255, 255, 255, 0.3); /* 半透明白色边框 */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); /* 阴影增强层次感 */
+
+}
+
+.el-button{
+
+    border: 2px solid #dcdfe6;
+    border-radius: 15px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .el-message__wrapper {
@@ -32,6 +49,39 @@
     color: rgba(145, 145, 145, 0.15);
     line-height: 1.4;
     flex: 1;
+}
+
+.el-card {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 2px solid #dcdfe6;
+    border-radius: 15px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    cursor: move;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+}
+
+.el-table__header {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.el-table-column {
+    background-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    cursor: move;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.el-scrollbar {
+    background-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    cursor: move;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .el-message__closeBtn {
@@ -63,3 +113,4 @@
 .el-message--info .el-message__icon {
     color: #007aff;
 }
+

@@ -2,20 +2,44 @@
   <div class="workflow-designer">
     <!-- 工具栏 -->
     <div class="designer-toolbar">
-      <div class="workflow-name-input">
-        <el-input 
-          v-model="workflowName" 
-          placeholder="输入工作流名称" 
-          size="small"
-          style="width: 200px; margin-right: 12px;"
+
+      <div class="toolbar-left">
+        名称：
+        <el-input
+            v-model="workflowName"
+            placeholder="输入工作流名称"
+            style="width: 200px; margin-right: 30px;"
         ></el-input>
+        描述：
+        <el-input
+            v-model="workflowDescription"
+            style="width: 240px; margin-right: 20px"
+            :rows="1"
+            type="textarea"
+            placeholder="Please input"
+        />
       </div>
-      <el-button type="primary" @click="saveWorkflow">保存工作流</el-button>
-      <el-button @click="runWorkflow">运行工作流</el-button>
       <div class="toolbar-right">
-        <el-button @click="zoomIn" size="small">放大</el-button>
-        <el-button @click="zoomOut" size="small">缩小</el-button>
-        <el-button @click="resetZoom" size="small">重置缩放</el-button>
+        <el-button @click="goBack" plain>
+          <el-icon style="margin-right: 5px"><Back /></el-icon>
+          返回列表
+        </el-button>
+        <el-button @click="resetZoom" plain>
+          <el-icon style="margin-right: 5px"><FullScreen /></el-icon>
+          重置缩放
+        </el-button>
+        <el-button type="primary" @click="saveWorkflow" plain>
+          <el-icon style="margin-right: 5px"><Check /></el-icon>
+          保存工作流
+        </el-button>
+        <el-button type="warning" @click="resetWorkflow" plain>
+          <el-icon style="margin-right: 5px"><Refresh /></el-icon>
+          重置工作流
+        </el-button>
+        <el-button type="success" @click="runWorkflow" plain>
+          <el-icon style="margin-right: 5px"><CaretRight /></el-icon>
+          运行工作流
+        </el-button>
       </div>
     </div>
     
@@ -23,8 +47,8 @@
     <div class="designer-container">
       <!-- 左侧节点面板 -->
       <div class="node-palette">
-        <h3>节点类型</h3>
-        <div class="node-list">
+        <h5>节点类型</h5>
+        <div class="node-list" style="padding-top: 10px">
           <div 
             v-for="nodeType in nodeTypes" 
             :key="nodeType.type"
@@ -32,7 +56,12 @@
             draggable="true"
             @dragstart="onDragStart($event, nodeType)"
           >
-            <div class="node-icon">{{ nodeType.icon }}</div>
+            <!-- 替换为el-icon + 动态组件 -->
+            <div class="node-icon">
+              <el-icon :size="20"> <!-- 可根据需要调整大小 -->
+                <component :is="nodeType.icon" />
+              </el-icon>
+            </div>
             <div class="node-label">{{ nodeType.label }}</div>
           </div>
         </div>
@@ -146,8 +175,10 @@
             <!-- 节点内容 -->
             <div class="node-content">
               <div class="node-header">
-                <div class="node-type-icon">{{ getNodeTypeIcon(node.type) }}</div>
-                <div class="node-name">{{ node.name }}</div>
+                <el-icon :size="20"> <!-- 可根据需要调整大小 -->
+                  <component :is="getNodeTypeIcon(node.type)" />
+                </el-icon>
+                <div class="node-name" style="padding-left: 15px">{{ node.name }}</div>
                   <el-button 
                     type="danger" 
                     size="small" 
@@ -203,576 +234,565 @@
       
       <!-- 右侧属性面板 -->
       <div class="properties-panel">
-        <el-tabs v-model="activeTab" size="small">
+        <el-tabs v-model="activeTab" size="small" class="compact-tabs">
           <!-- 节点属性标签 -->
           <el-tab-pane label="节点属性" name="node">
             <div v-if="selectedNode" class="node-properties">
-              <el-form label-position="top" size="small">
-                <el-form-item label="节点名称">
-                  <el-input v-model="selectedNode.name" @input="updateNode"></el-input>
+              <!-- 表单尺寸改为mini，进一步缩小组件 -->
+              <el-form label-position="top" size="mini" class="compact-form">
+                <el-form-item label="节点名称" class="compact-form-item">
+                  <el-input v-model="selectedNode.name" size="mini" />
                 </el-form-item>
-                <el-form-item label="节点类型">
-                  <el-input v-model="selectedNode.type" disabled></el-input>
-                </el-form-item>
-                
+
                 <!-- 大模型调用节点配置 -->
                 <template v-if="selectedNode.type === 'llm_call'">
-                  <el-form-item label="系统提示词">
-                    <el-input 
-                      v-model="selectedNodeConfig.systemPrompt" 
-                      type="textarea" 
-                      :rows="4" 
-                      @input="updateNodeConfig"
+                  <el-form-item label="系统提示词" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.systemPrompt"
+                        type="textarea"
+                        :rows="3"
+                    @input="updateNodeConfig"
+                    size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-form-item label="用户提示词模板">
-                    <el-input 
-                      v-model="selectedNodeConfig.userPrompt" 
-                      type="textarea" 
-                      :rows="4" 
-                      @input="updateNodeConfig"
-                      placeholder="使用${变量名}来引用上下文变量"
+                  <el-form-item label="用户提示词模板" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.userPrompt"
+                        type="textarea"
+                        :rows="3"
+                    @input="updateNodeConfig"
+                    placeholder="使用${变量名}来引用上下文变量"
+                    size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-form-item label="输出变量名">
-                    <el-input v-model="selectedNodeConfig.outputVar" @input="updateNodeConfig"></el-input>
+                  <el-form-item label="输出变量名" class="compact-form-item">
+                    <el-input v-model="selectedNodeConfig.outputVar" @input="updateNodeConfig" size="mini"></el-input>
                   </el-form-item>
-                  <el-divider>对话界面设置</el-divider>
-                  <el-form-item label="打印到对话界面">
-                    <el-switch 
-                      v-model="selectedNodeConfig.enableChatOutput" 
-                      @change="updateNodeConfig"
+
+                  <el-divider class="compact-divider">对话界面设置</el-divider>
+                  <el-form-item label="打印到对话界面" class="compact-form-item">
+                    <el-switch
+                        v-model="selectedNodeConfig.enableChatOutput"
+                        @change="updateNodeConfig"
+                        size="small"
                     ></el-switch>
                   </el-form-item>
-                  <el-form-item label="对话界面昵称" v-if="selectedNodeConfig.enableChatOutput">
-                    <el-input 
-                      v-model="selectedNodeConfig.chatNickname" 
-                      @input="updateNodeConfig"
-                      placeholder="留空则使用节点名称"
+                  <el-form-item label="对话界面昵称" v-if="selectedNodeConfig.enableChatOutput" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.chatNickname"
+                        @input="updateNodeConfig"
+                        placeholder="留空则使用节点名称"
+                        size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-divider>历史对话设置</el-divider>
-                  <el-form-item label="历史对话Key">
-                    <el-input 
-                      v-model="selectedNodeConfig.historyKey" 
-                      @input="updateNodeConfig"
-                      placeholder="默认为default"
+
+                  <el-divider class="compact-divider">历史对话设置</el-divider>
+                  <el-form-item label="历史对话Key" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.historyKey"
+                        @input="updateNodeConfig"
+                        placeholder="默认为default"
+                        size="mini"
                     ></el-input>
-                    <div class="el-form-item__help">用于标识不同的历史对话容器</div>
+                    <div class="el-form-item__help compact-help-text">用于标识不同的历史对话容器</div>
                   </el-form-item>
-                  <el-form-item label="引用历史对话">
-                    <el-switch 
-                      v-model="selectedNodeConfig.useHistory" 
-                      @change="updateNodeConfig"
+                  <el-form-item label="引用历史对话" class="compact-form-item">
+                    <el-switch
+                        v-model="selectedNodeConfig.useHistory"
+                        @change="updateNodeConfig"
+                        size="small"
                     ></el-switch>
-                    <div class="el-form-item__help">勾选后，发送API请求时会包含历史对话消息</div>
+                    <div class="el-form-item__help compact-help-text">勾选后，发送API请求时会包含历史对话消息</div>
                   </el-form-item>
-                  <el-form-item label="保留输出至历史对话">
-                    <el-switch 
-                      v-model="selectedNodeConfig.saveToHistory" 
-                      @change="updateNodeConfig"
+                  <el-form-item label="保留输出至历史对话" class="compact-form-item">
+                    <el-switch
+                        v-model="selectedNodeConfig.saveToHistory"
+                        @change="updateNodeConfig"
+                        size="small"
                     ></el-switch>
-                    <div class="el-form-item__help">勾选后，每次输出会存入对应key的历史对话容器</div>
+                    <div class="el-form-item__help compact-help-text">勾选后，每次输出会存入对应key的历史对话容器</div>
                   </el-form-item>
-                  <el-form-item label="保存历史对话Key" v-if="selectedNodeConfig.saveToHistory">
-                    <el-input 
-                      v-model="selectedNodeConfig.saveHistoryKey" 
-                      @input="updateNodeConfig"
-                      placeholder="留空则使用上面的历史对话Key"
+                  <el-form-item label="保存历史对话Key" v-if="selectedNodeConfig.saveToHistory" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.saveHistoryKey"
+                        @input="updateNodeConfig"
+                        placeholder="留空则使用上面的历史对话Key"
+                        size="mini"
                     ></el-input>
-                    <div class="el-form-item__help">用于保存输出的历史对话容器key，可与引用key不同</div>
+                    <div class="el-form-item__help compact-help-text">用于保存输出的历史对话容器key，可与引用key不同</div>
                   </el-form-item>
                 </template>
-                
+
                 <!-- 用户输入节点配置 -->
                 <template v-if="selectedNode.type === 'user_input'">
-                  <el-form-item label="提示消息">
-                    <el-input 
-                      v-model="selectedNodeConfig.prompt" 
-                      type="textarea" 
-                      :rows="3" 
-                      @input="updateNodeConfig"
-                      placeholder="请输入提示消息，例如：请输入您的姓名"
+                  <el-form-item label="提示消息" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.prompt"
+                        type="textarea"
+                        :rows="2"
+                    @input="updateNodeConfig"
+                    placeholder="请输入提示消息，例如：请输入您的姓名"
+                    size="mini"
                     ></el-input>
-                    <div class="el-form-item__help">支持 ${变量名} 进行变量替换</div>
+                    <div class="el-form-item__help compact-help-text">支持 ${变量名} 进行变量替换</div>
                   </el-form-item>
-                  <el-form-item label="输出变量名">
-                    <el-input 
-                      v-model="selectedNodeConfig.outputVariable" 
-                      @input="updateNodeConfig"
-                      placeholder="例如：userInput"
-                    ></el-input>
-                  </el-form-item>
-                  <el-form-item label="历史对话Key">
-                    <el-input 
-                      v-model="selectedNodeConfig.historyKey" 
-                      @input="updateNodeConfig"
-                      placeholder="默认为 default"
+                  <el-form-item label="输出变量名" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.outputVariable"
+                        @input="updateNodeConfig"
+                        placeholder="例如：userInput"
+                        size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-form-item label="保存至历史对话">
-                    <el-switch 
-                      v-model="selectedNodeConfig.saveToHistory" 
-                      @change="updateNodeConfig"
+                  <el-form-item label="历史对话Key" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.historyKey"
+                        @input="updateNodeConfig"
+                        placeholder="默认为 default"
+                        size="mini"
+                    ></el-input>
+                  </el-form-item>
+                  <el-form-item label="保存至历史对话" class="compact-form-item">
+                    <el-switch
+                        v-model="selectedNodeConfig.saveToHistory"
+                        @change="updateNodeConfig"
+                        size="small"
                     ></el-switch>
                   </el-form-item>
-                  <el-form-item label="保存历史Key（可选）" v-if="selectedNodeConfig.saveToHistory">
-                    <el-input 
-                      v-model="selectedNodeConfig.saveHistoryKey" 
-                      @input="updateNodeConfig"
-                      placeholder="留空则使用历史对话Key"
+                  <el-form-item label="保存历史Key（可选）" v-if="selectedNodeConfig.saveToHistory" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.saveHistoryKey"
+                        @input="updateNodeConfig"
+                        placeholder="留空则使用历史对话Key"
+                        size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-form-item label="历史对话昵称">
-                    <el-input 
-                      v-model="selectedNodeConfig.historyNickname" 
-                      @input="updateNodeConfig"
-                      placeholder="默认为 用户"
+                  <el-form-item label="历史对话昵称" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.historyNickname"
+                        @input="updateNodeConfig"
+                        placeholder="默认为 用户"
+                        size="mini"
                     ></el-input>
-                    <div class="el-form-item__help">写入历史时使用的“xx说”，可自定义角色名称</div>
+                    <div class="el-form-item__help compact-help-text">写入历史时使用的“xx说”，可自定义角色名称</div>
                   </el-form-item>
                 </template>
-                
+
                 <!-- 信息输出节点配置 -->
                 <template v-if="selectedNode.type === 'info_output'">
-                  <el-form-item label="输出内容">
-                    <el-input 
-                      v-model="selectedNodeConfig.prompt" 
-                      type="textarea" 
-                      :rows="3" 
-                      @input="updateNodeConfig"
-                      placeholder="要在聊天界面展示的内容，支持 ${变量名}"
+                  <el-form-item label="输出内容" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.prompt"
+                        type="textarea"
+                        :rows="2"
+                    @input="updateNodeConfig"
+                    placeholder="要在聊天界面展示的内容，支持 ${变量名}"
+                    size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-form-item label="历史对话Key">
-                    <el-input 
-                      v-model="selectedNodeConfig.historyKey" 
-                      @input="updateNodeConfig"
-                      placeholder="默认为 default"
+                  <el-form-item label="历史对话Key" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.historyKey"
+                        @input="updateNodeConfig"
+                        placeholder="默认为 default"
+                        size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-form-item label="保存至历史对话">
-                    <el-switch 
-                      v-model="selectedNodeConfig.saveToHistory" 
-                      @change="updateNodeConfig"
+                  <el-form-item label="保存至历史对话" class="compact-form-item">
+                    <el-switch
+                        v-model="selectedNodeConfig.saveToHistory"
+                        @change="updateNodeConfig"
+                        size="small"
                     ></el-switch>
                   </el-form-item>
-                  <el-form-item label="保存历史Key（可选）" v-if="selectedNodeConfig.saveToHistory">
-                    <el-input 
-                      v-model="selectedNodeConfig.saveHistoryKey" 
-                      @input="updateNodeConfig"
-                      placeholder="留空则使用历史对话Key"
+                  <el-form-item label="保存历史Key（可选）" v-if="selectedNodeConfig.saveToHistory" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.saveHistoryKey"
+                        @input="updateNodeConfig"
+                        placeholder="留空则使用历史对话Key"
+                        size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-form-item label="历史对话昵称">
-                    <el-input 
-                      v-model="selectedNodeConfig.historyNickname" 
-                      @input="updateNodeConfig"
-                      placeholder="默认为 系统"
+                  <el-form-item label="历史对话昵称" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.historyNickname"
+                        @input="updateNodeConfig"
+                        placeholder="默认为 系统"
+                        size="mini"
                     ></el-input>
-                    <div class="el-form-item__help">写入历史时使用的“xx说”，可自定义角色名称</div>
+                    <div class="el-form-item__help compact-help-text">写入历史时使用的“xx说”，可自定义角色名称</div>
                   </el-form-item>
                 </template>
-                
+
                 <!-- 大模型赋值节点配置 -->
                 <template v-if="selectedNode.type === 'llm_assign'">
-                  <el-form-item label="用户提示词模板">
-                    <el-input 
-                      v-model="selectedNodeConfig.userPrompt" 
-                      type="textarea" 
-                      :rows="4" 
-                      @input="updateNodeConfig"
-                      placeholder="使用${变量名}来引用全局变量，AI将根据此提示词输出JSON格式的变量值"
+                  <el-form-item label="用户提示词模板" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.userPrompt"
+                        type="textarea"
+                        :rows="3"
+                    @input="updateNodeConfig"
+                    placeholder="使用${变量名}来引用全局变量，AI将根据此提示词输出JSON格式的变量值"
+                    size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-divider>历史对话设置</el-divider>
-                  <el-form-item label="历史对话Key">
-                    <el-input 
-                      v-model="selectedNodeConfig.historyKey" 
-                      @input="updateNodeConfig"
-                      placeholder="默认为default"
+
+                  <el-divider class="compact-divider">历史对话设置</el-divider>
+                  <el-form-item label="历史对话Key" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.historyKey"
+                        @input="updateNodeConfig"
+                        placeholder="默认为default"
+                        size="mini"
                     ></el-input>
-                    <div class="el-form-item__help">用于标识不同的历史对话容器</div>
+                    <div class="el-form-item__help compact-help-text">用于标识不同的历史对话容器</div>
                   </el-form-item>
-                  <el-form-item label="引用历史对话">
-                    <el-switch 
-                      v-model="selectedNodeConfig.useHistory" 
-                      @change="updateNodeConfig"
+                  <el-form-item label="引用历史对话" class="compact-form-item">
+                    <el-switch
+                        v-model="selectedNodeConfig.useHistory"
+                        @change="updateNodeConfig"
+                        size="small"
                     ></el-switch>
-                    <div class="el-form-item__help">勾选后，发送API请求时会包含历史对话消息（不会保存输出至历史对话）</div>
+                    <div class="el-form-item__help compact-help-text">勾选后，发送API请求时会包含历史对话消息（不会保存输出至历史对话）</div>
                   </el-form-item>
-                  <el-form-item label="对话界面昵称" v-if="selectedNodeConfig.useHistory">
-                    <el-input 
-                      v-model="selectedNodeConfig.chatNickname" 
-                      @input="updateNodeConfig"
-                      placeholder="留空则使用节点名称"
+                  <el-form-item label="对话界面昵称" v-if="selectedNodeConfig.useHistory" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.chatNickname"
+                        @input="updateNodeConfig"
+                        placeholder="留空则使用节点名称"
+                        size="mini"
                     ></el-input>
-                    <div class="el-form-item__help">用于判断历史消息的role（相同昵称为assistant，否则为user）</div>
+                    <div class="el-form-item__help compact-help-text">用于判断历史消息的role（相同昵称为assistant，否则为user）</div>
                   </el-form-item>
-                  <el-divider>要赋值的全局变量</el-divider>
-                  <div class="assign-variables-list">
-                    <div 
-                      v-for="(varItem, index) in (selectedNodeConfig.assignVariables || [])" 
-                      :key="index" 
-                      class="assign-variable-item"
+
+                  <el-divider class="compact-divider">要赋值的全局变量</el-divider>
+                  <div class="assign-variables-list compact-list">
+                    <div
+                        v-for="(varItem, index) in (selectedNodeConfig.assignVariables || [])"
+                        :key="index"
+                        class="assign-variable-item compact-list-item"
                     >
-                      <el-form label-position="top" size="small">
-                        <div class="assign-variable-row">
-                          <el-form-item label="变量名" :label-width="60">
-                            <el-input 
-                              v-model="varItem.name" 
-                              @input="updateNodeConfig"
-                              placeholder="支持中文，例如：用户姓名"
+                      <el-form label-position="top" size="mini">
+                        <div class="assign-variable-row compact-row">
+                          <el-form-item label="变量名" :label-width="60" class="compact-form-item">
+                            <el-input
+                                v-model="varItem.name"
+                                @input="updateNodeConfig"
+                                placeholder="支持中文，例如：用户姓名"
+                                size="mini"
                             ></el-input>
                           </el-form-item>
-                          <el-form-item label="类型" :label-width="40">
-                            <el-select 
-                              v-model="varItem.type" 
-                              @change="updateNodeConfig" 
-                              style="width: 100px;"
+                          <el-form-item label="类型" :label-width="40" class="compact-form-item">
+                            <el-select
+                                v-model="varItem.type"
+                                @change="updateNodeConfig"
+                                style="width: 100px;"
+                                size="mini"
                             >
                               <el-option label="字符串" value="string"></el-option>
                               <el-option label="整数" value="integer"></el-option>
                               <el-option label="浮点数" value="double"></el-option>
                             </el-select>
                           </el-form-item>
-                          <el-button 
-                            type="danger" 
-                            size="small" 
-                            circle 
-                            @click="removeAssignVariable(index)"
-                            style="margin-top: 22px;"
+                          <el-button
+                              type="danger"
+                              size="mini"
+                          circle
+                          @click="removeAssignVariable(index)"
+                          class="compact-btn"
                           >
-                            <el-icon><Delete /></el-icon>
+                          <el-icon><Delete /></el-icon>
                           </el-button>
                         </div>
                       </el-form>
                     </div>
-                    <el-button 
-                      type="primary" 
-                      size="small" 
-                      @click="addAssignVariable"
-                      style="margin-top: 10px;"
+                    <el-button
+                        type="primary"
+                        size="mini"
+                    @click="addAssignVariable"
+                    class="compact-add-btn"
                     >
-                      <el-icon><Plus /></el-icon>
-                      添加变量
+                    <el-icon><Plus /></el-icon>
+                    添加变量
                     </el-button>
-                    <div v-if="!selectedNodeConfig.assignVariables || selectedNodeConfig.assignVariables.length === 0" class="no-variables">
+                    <div v-if="!selectedNodeConfig.assignVariables || selectedNodeConfig.assignVariables.length === 0" class="no-variables compact-empty-tip">
                       <p>暂无变量，点击添加按钮创建</p>
                     </div>
                   </div>
                 </template>
-                
+
                 <!-- 大模型分支节点配置 -->
                 <template v-if="selectedNode.type === 'llm_branch'">
-                  <el-form-item label="用户提示词模板">
-                    <el-input 
-                      v-model="selectedNodeConfig.userPrompt" 
-                      type="textarea" 
-                      :rows="4" 
-                      @input="updateNodeConfig"
-                      placeholder="使用${变量名}来引用全局变量，AI将根据此提示词选择分支"
+                  <el-form-item label="用户提示词模板" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.userPrompt"
+                        type="textarea"
+                        :rows="3"
+                    @input="updateNodeConfig"
+                    placeholder="使用${变量名}来引用全局变量，AI将根据此提示词选择分支"
+                    size="mini"
                     ></el-input>
                   </el-form-item>
-                  <el-divider>历史对话设置</el-divider>
-                  <el-form-item label="历史对话Key">
-                    <el-input 
-                      v-model="selectedNodeConfig.historyKey" 
-                      @input="updateNodeConfig"
-                      placeholder="默认为default"
+
+                  <el-divider class="compact-divider">历史对话设置</el-divider>
+                  <el-form-item label="历史对话Key" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.historyKey"
+                        @input="updateNodeConfig"
+                        placeholder="默认为default"
+                        size="mini"
                     ></el-input>
-                    <div class="el-form-item__help">用于标识不同的历史对话容器</div>
+                    <div class="el-form-item__help compact-help-text">用于标识不同的历史对话容器</div>
                   </el-form-item>
-                  <el-form-item label="引用历史对话">
-                    <el-switch 
-                      v-model="selectedNodeConfig.useHistory" 
-                      @change="updateNodeConfig"
+                  <el-form-item label="引用历史对话" class="compact-form-item">
+                    <el-switch
+                        v-model="selectedNodeConfig.useHistory"
+                        @change="updateNodeConfig"
+                        size="small"
                     ></el-switch>
-                    <div class="el-form-item__help">勾选后，发送API请求时会包含历史对话消息（不会保存输出至历史对话）</div>
+                    <div class="el-form-item__help compact-help-text">勾选后，发送API请求时会包含历史对话消息（不会保存输出至历史对话）</div>
                   </el-form-item>
-                  <el-form-item label="对话界面昵称" v-if="selectedNodeConfig.useHistory">
-                    <el-input 
-                      v-model="selectedNodeConfig.chatNickname" 
-                      @input="updateNodeConfig"
-                      placeholder="留空则使用节点名称"
+                  <el-form-item label="对话界面昵称" v-if="selectedNodeConfig.useHistory" class="compact-form-item">
+                    <el-input
+                        v-model="selectedNodeConfig.chatNickname"
+                        @input="updateNodeConfig"
+                        placeholder="留空则使用节点名称"
+                        size="mini"
                     ></el-input>
-                    <div class="el-form-item__help">用于判断历史消息的role（相同昵称为assistant，否则为user）</div>
+                    <div class="el-form-item__help compact-help-text">用于判断历史消息的role（相同昵称为assistant，否则为user）</div>
                   </el-form-item>
-                  <el-divider>分支列表</el-divider>
-                  <div class="llm-branch-list">
-                    <div 
-                      v-for="(branch, index) in (selectedNodeConfig.branches || [])" 
-                      :key="index" 
-                      class="llm-branch-item"
+
+                  <el-divider class="compact-divider">分支列表</el-divider>
+                  <div class="llm-branch-list compact-list">
+                    <div
+                        v-for="(branch, index) in (selectedNodeConfig.branches || [])"
+                        :key="index"
+                        class="llm-branch-item compact-list-item"
                     >
-                      <el-form label-position="top" size="small">
-                        <div class="llm-branch-row">
-                          <el-form-item :label="index === (selectedNodeConfig.branches || []).length - 1 ? '分支名称（默认分支）' : '分支名称'" 
-                                        :label-width="index === (selectedNodeConfig.branches || []).length - 1 ? 120 : 80">
-                            <el-input 
-                              v-model="branch.name" 
-                              @input="updateNodeConfig"
-                              :placeholder="index === (selectedNodeConfig.branches || []).length - 1 ? '例如：通过（默认分支）' : '例如：拒绝、待审核'"
+                      <el-form label-position="top" size="mini">
+                        <div class="llm-branch-row compact-row">
+                          <el-form-item
+                              :label="index === (selectedNodeConfig.branches || []).length - 1 ? '分支名称（默认分支）' : '分支名称'"
+                              :label-width="index === (selectedNodeConfig.branches || []).length - 1 ? 120 : 80"
+                              class="compact-form-item"
+                          >
+                            <el-input
+                                v-model="branch.name"
+                                @input="updateNodeConfig"
+                                :placeholder="index === (selectedNodeConfig.branches || []).length - 1 ? '例如：通过（默认分支）' : '例如：拒绝、待审核'"
+                                size="mini"
                             >
                               <template v-if="index === (selectedNodeConfig.branches || []).length - 1" #prefix>
-                                <span style="color: #409eff; font-size: 12px;">默认</span>
+                                <span style="color: #409eff; font-size: 11px;">默认</span>
                               </template>
                             </el-input>
                           </el-form-item>
-                          <el-form-item label="描述（可选）" :label-width="80">
-                            <el-input 
-                              v-model="branch.description" 
-                              @input="updateNodeConfig"
-                              placeholder="分支的说明，帮助AI理解何时选择此分支"
+                          <el-form-item label="描述（可选）" :label-width="80" class="compact-form-item">
+                            <el-input
+                                v-model="branch.description"
+                                @input="updateNodeConfig"
+                                placeholder="分支的说明，帮助AI理解何时选择此分支"
+                                size="mini"
                             ></el-input>
                           </el-form-item>
-                          <el-button 
-                            type="danger" 
-                            size="small" 
-                            circle 
-                            @click="removeLlmBranch(index)"
-                            style="margin-top: 22px;"
-                            :disabled="index === (selectedNodeConfig.branches || []).length - 1"
-                            :title="index === (selectedNodeConfig.branches || []).length - 1 ? '最后一个分支是默认分支，不能删除' : '删除分支'"
+                          <el-button
+                              type="danger"
+                              size="mini"
+                          circle
+                          @click="removeLlmBranch(index)"
+                          :disabled="index === (selectedNodeConfig.branches || []).length - 1"
+                          :title="index === (selectedNodeConfig.branches || []).length - 1 ? '最后一个分支是默认分支，不能删除' : '删除分支'"
+                          class="compact-btn"
                           >
-                            <el-icon><Delete /></el-icon>
+                          <el-icon><Delete /></el-icon>
                           </el-button>
                         </div>
                       </el-form>
                     </div>
-                    <el-button 
-                      type="primary" 
-                      size="small" 
-                      @click="addLlmBranch"
-                      style="margin-top: 10px;"
+                    <el-button
+                        type="primary"
+                        size="mini"
+                    @click="addLlmBranch"
+                    class="compact-add-btn"
                     >
-                      <el-icon><Plus /></el-icon>
-                      添加分支
+                    <el-icon><Plus /></el-icon>
+                    添加分支
                     </el-button>
-                    <div v-if="!selectedNodeConfig.branches || selectedNodeConfig.branches.length === 0" class="no-branches">
+                    <div v-if="!selectedNodeConfig.branches || selectedNodeConfig.branches.length === 0" class="no-branches compact-empty-tip">
                       <p>暂无分支，点击添加按钮创建</p>
                     </div>
                   </div>
-                  <el-divider>默认分支</el-divider>
-                  <div class="el-form-item__help" style="margin-bottom: 10px;">
+
+                  <el-divider class="compact-divider">默认分支</el-divider>
+                  <div class="el-form-item__help compact-help-text" style="margin-bottom: 5px;">
                     <p>最后一个分支将自动作为默认分支。如果AI无法从上述分支中选择，将使用最后一个分支作为默认分支。新添加的分支会插入到最后一个分支之前。</p>
                   </div>
                 </template>
-                
+
                 <!-- 基础分支节点配置 -->
                 <template v-if="selectedNode.type === 'basic_branch'">
-                  <el-divider>分支条件</el-divider>
-                  <div class="branch-conditions-editor">
-                    <div 
-                      v-for="(port, index) in getOutputPorts(selectedNode)" 
-                      :key="`condition-edit-${index}`"
-                      class="branch-condition-edit"
+                  <el-divider class="compact-divider">分支条件</el-divider>
+                  <div class="branch-conditions-editor compact-list">
+                    <div
+                        v-for="(port, index) in getOutputPorts(selectedNode)"
+                        :key="`condition-edit-${index}`"
+                        class="branch-condition-edit compact-list-item"
                     >
-                      <div class="branch-condition-header">
-                        <span>
-                          分支{{ index + 1 }}
-                          <span v-if="isDefaultBranch(selectedNode, index)">（默认分支）</span>
-                        </span>
+                      <div class="branch-condition-header compact-header">
+                  <span class="header-text">
+                    分支{{ index + 1 }}
+                    <span v-if="isDefaultBranch(selectedNode, index)">（默认分支）</span>
+                  </span>
                         <div class="branch-condition-actions">
-                          <el-button 
-                            link 
-                            size="small" 
-                            @click="insertBasicBranch(index)"
+                          <el-button
+                              link
+                              size="mini"
+                          @click="insertBasicBranch(index)"
                           >
-                            <el-icon><Plus /></el-icon>
-                            在此处添加
+                          <el-icon><Plus /></el-icon>
+                          在此处添加
                           </el-button>
-                          <el-button 
-                            v-if="!isDefaultBranch(selectedNode, index)"
-                            link
-                            type="danger" 
-                            size="small" 
-                            @click="removeBasicBranch(index)"
+                          <el-button
+                              v-if="!isDefaultBranch(selectedNode, index)"
+                              link
+                              type="danger"
+                              size="mini"
+                          @click="removeBasicBranch(index)"
                           >
-                            删除
+                          删除
                           </el-button>
                         </div>
                       </div>
-                      <el-input 
-                        v-if="!isDefaultBranch(selectedNode, index)"
-                        v-model="branchConditions[index]" 
-                        @input="updateBranchCondition(index)"
-                        placeholder="例如：${answer} > 100"
+                      <el-input
+                          v-if="!isDefaultBranch(selectedNode, index)"
+                          v-model="branchConditions[index]"
+                          @input="updateBranchCondition(index)"
+                          placeholder="例如：${answer} > 100"
+                          size="mini"
                       ></el-input>
-                      <el-input 
-                        v-else
-                        value="默认分支（无需条件）"
-                        disabled
-                        placeholder="默认分支，无需输入条件"
+                      <el-input
+                          v-else
+                          value="默认分支（无需条件）"
+                          disabled
+                          placeholder="默认分支，无需输入条件"
+                          size="mini"
                       ></el-input>
                     </div>
-                    <el-button 
-                      type="primary" 
-                      plain
-                      size="small" 
-                      @click="insertBasicBranch(getOutputPorts(selectedNode).length - 1)"
+                    <el-button
+                        type="primary"
+                        plain
+                        size="mini"
+                    @click="insertBasicBranch(getOutputPorts(selectedNode).length - 1)"
+                    class="compact-add-btn"
                     >
-                      <el-icon><Plus /></el-icon>
-                      在默认分支前添加分支
+                    <el-icon><Plus /></el-icon>
+                    在默认分支前添加分支
                     </el-button>
                   </div>
                 </template>
-                
+
                 <!-- 赋值节点配置 -->
                 <template v-if="selectedNode.type === 'assign'">
-                  <el-divider>赋值语句列表</el-divider>
-                  <div class="assign-statements-list">
-                    <div 
-                      v-for="(assignment, index) in (selectedNodeConfig.assignments || [])" 
-                      :key="index" 
-                      class="assign-statement-item"
+                  <el-divider class="compact-divider">赋值语句列表</el-divider>
+                  <div class="assign-statements-list compact-list">
+                    <div
+                        v-for="(assignment, index) in (selectedNodeConfig.assignments || [])"
+                        :key="index"
+                        class="assign-statement-item compact-list-item"
                     >
-                      <el-form label-position="top" size="small">
-                        <div class="assign-statement-row">
-                          <el-form-item label="变量名" :label-width="60">
-                            <el-input 
-                              v-model="assignment.variableName" 
-                              @input="updateNodeConfig"
-                              placeholder="例如：result"
+                      <el-form label-position="top" size="mini">
+                        <div class="assign-statement-row compact-row">
+                          <el-form-item label="变量名" :label-width="60" class="compact-form-item">
+                            <el-input
+                                v-model="assignment.variableName"
+                                @input="updateNodeConfig"
+                                placeholder="例如：result"
+                                size="mini"
                             ></el-input>
                           </el-form-item>
-                          <el-form-item label="值表达式" style="flex: 1;">
-                            <el-input 
-                              v-model="assignment.valueExpression" 
-                              @input="updateNodeConfig"
-                              placeholder="例如：1+1 或 ${var1} * 2"
+                          <el-form-item label="值表达式" style="flex: 1;" class="compact-form-item">
+                            <el-input
+                                v-model="assignment.valueExpression"
+                                @input="updateNodeConfig"
+                                placeholder="例如：1+1 或 ${var1} * 2"
+                                size="mini"
                             ></el-input>
                           </el-form-item>
-                          <el-button 
-                            type="danger" 
-                            size="small" 
-                            circle 
-                            @click="removeAssignStatement(index)"
-                            style="margin-top: 22px;"
+                          <el-button
+                              type="danger"
+                              size="mini"
+                          circle
+                          @click="removeAssignStatement(index)"
+                          class="compact-btn"
                           >
-                            <el-icon><Delete /></el-icon>
+                          <el-icon><Delete /></el-icon>
                           </el-button>
                         </div>
                       </el-form>
                     </div>
-                    <el-button 
-                      type="primary" 
-                      size="small" 
-                      @click="addAssignStatement"
-                      style="margin-top: 10px;"
+                    <el-button
+                        type="primary"
+                        size="mini"
+                    @click="addAssignStatement"
+                    class="compact-add-btn"
                     >
-                      <el-icon><Plus /></el-icon>
-                      添加赋值语句
+                    <el-icon><Plus /></el-icon>
+                    添加赋值语句
                     </el-button>
-                    <div v-if="!selectedNodeConfig.assignments || selectedNodeConfig.assignments.length === 0" class="no-variables">
+                    <div v-if="!selectedNodeConfig.assignments || selectedNodeConfig.assignments.length === 0" class="no-variables compact-empty-tip">
                       <p>暂无赋值语句，点击添加按钮创建</p>
                     </div>
                   </div>
                 </template>
-                
-                <!-- 用户输入节点配置 -->
-                <template v-if="selectedNode.type === 'user_input'">
-                  <el-form-item label="提示消息">
-                    <el-input 
-                      v-model="selectedNodeConfig.prompt" 
-                      type="textarea" 
-                      :rows="4" 
-                      @input="updateNodeConfig"
-                      placeholder="请输入提示消息，例如：请输入您的姓名："
-                    ></el-input>
-                    <div class="el-form-item__help">支持使用${变量名}来引用上下文变量</div>
-                  </el-form-item>
-                  <el-form-item label="输出变量名">
-                    <el-input 
-                      v-model="selectedNodeConfig.outputVariable" 
-                      @input="updateNodeConfig"
-                      placeholder="例如：userInput"
-                    ></el-input>
-                    <div class="el-form-item__help">用户输入将保存到此变量中</div>
-                  </el-form-item>
-                  <el-divider>历史对话设置</el-divider>
-                  <el-form-item label="历史对话key">
-                    <el-input 
-                      v-model="selectedNodeConfig.historyKey" 
-                      @input="updateNodeConfig"
-                      placeholder="默认为 default"
-                    ></el-input>
-                    <div class="el-form-item__help">用户输入将存储到此key的历史会话中</div>
-                  </el-form-item>
-                  <el-form-item label="保存至历史对话">
-                    <el-switch 
-                      v-model="selectedNodeConfig.saveToHistory" 
-                      @change="updateNodeConfig"
-                    ></el-switch>
-                    <div class="el-form-item__help">是否将用户输入保存到历史对话中（格式：【用户】说：内容）</div>
-                  </el-form-item>
-                  <el-form-item label="保存历史key（可选）">
-                    <el-input 
-                      v-model="selectedNodeConfig.saveHistoryKey" 
-                      @input="updateNodeConfig"
-                      placeholder="留空则使用上面的历史对话key"
-                    ></el-input>
-                    <div class="el-form-item__help">如果设置，用户输入将保存到此key，而不是上面的历史对话key</div>
-                  </el-form-item>
-                  <el-form-item label="历史对话昵称">
-                    <el-input 
-                      v-model="selectedNodeConfig.historyNickname" 
-                      @input="updateNodeConfig"
-                      placeholder="默认为 用户"
-                    ></el-input>
-                    <div class="el-form-item__help">用于历史对话的昵称，例如：用户/访客/学员</div>
-                  </el-form-item>
-                </template>
               </el-form>
             </div>
-            <div v-else class="no-selection">
+            <div v-else class="no-selection compact-empty-tip">
               <p>请选择一个节点</p>
             </div>
           </el-tab-pane>
-          
+
           <!-- 全局变量标签 -->
           <el-tab-pane label="全局变量" name="variables">
-            <div class="global-variables">
-              <div class="variables-header">
-                <h3>全局变量</h3>
-                <el-button type="primary" size="small" @click="addGlobalVariable">添加变量</el-button>
+            <div class="global-variables compact-container">
+              <div class="variables-header compact-header">
+                <h3 class="header-title">全局变量</h3>
+                <el-button type="primary" size="mini" @click="addGlobalVariable">添加变量</el-button>
               </div>
-              <div class="variables-list">
-                <div v-for="(variable, index) in globalVariables" :key="index" class="variable-item">
+              <div class="variables-list compact-list">
+                <div v-for="(variable, index) in globalVariables" :key="index" class="variable-item compact-list-item">
                   <el-form label-position="top" size="mini">
-                    <div class="variable-row">
-                      <el-form-item label="变量名" :label-width="60">
-                        <el-input v-model="variable.name" @input="updateGlobalVariables"></el-input>
+                    <div class="variable-row compact-row">
+                      <el-form-item label="变量名" :label-width="60" class="compact-form-item">
+                        <el-input v-model="variable.name" @input="updateGlobalVariables" size="mini"></el-input>
                       </el-form-item>
-                      <el-form-item label="类型" :label-width="40">
-                        <el-select v-model="variable.type" @change="updateGlobalVariables" style="width: 100px;">
+                      <el-form-item label="类型" :label-width="40" class="compact-form-item">
+                        <el-select v-model="variable.type" @change="updateGlobalVariables" style="width: 100px;" size="mini">
                           <el-option label="字符串" value="string"></el-option>
                           <el-option label="整数" value="integer"></el-option>
                           <el-option label="浮点数" value="double"></el-option>
                         </el-select>
                       </el-form-item>
-                      <el-form-item label="初始值" :label-width="60">
-                        <el-input v-model="variable.initialValue" @input="updateGlobalVariables"></el-input>
+                      <el-form-item label="初始值" :label-width="60" class="compact-form-item">
+                        <el-input v-model="variable.initialValue" @input="updateGlobalVariables" size="mini"></el-input>
                       </el-form-item>
-                      <el-button 
-                        type="danger" 
-                        size="mini" 
-                        circle 
-                        @click="deleteGlobalVariable(index)"
-                        style="margin-top: 22px;"
+                      <el-button
+                          type="danger"
+                          size="mini"
+                          circle
+                          @click="deleteGlobalVariable(index)"
+                          class="compact-btn"
                       >
                         <el-icon><Delete /></el-icon>
                       </el-button>
                     </div>
                   </el-form>
                 </div>
-                <div v-if="globalVariables.length === 0" class="no-variables">
+                <div v-if="globalVariables.length === 0" class="no-variables compact-empty-tip">
                   <p>暂无全局变量，点击添加按钮创建</p>
                 </div>
               </div>
             </div>
           </el-tab-pane>
-          
         </el-tabs>
       </div>
     </div>
@@ -781,8 +801,21 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Delete, Plus, Close } from '@element-plus/icons-vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {
+  VideoPlay,
+  SwitchButton,
+  ChatRound,
+  EditPen,
+  Expand,
+  Rank,
+  ChatLineRound,
+  ChatLineSquare,
+  Postcard,
+  ChromeFilled,
+  Comment,
+  Avatar, ArrowLeft
+} from '@element-plus/icons-vue'
 
 // Props
 const props = defineProps({
@@ -793,28 +826,27 @@ const props = defineProps({
 })
 
 // Emits
-const emit = defineEmits(['save', 'run'])
+const emit = defineEmits(['save', 'run', 'reset', 'goBack'])
 
 // 节点类型定义
 const nodeTypes = [
-  { type: 'start', label: '开始节点', icon: '▶️' },
-  { type: 'end', label: '结束节点', icon: '⏹️' },
-  { type: 'llm_call', label: '大模型调用', icon: '🤖' },
-  { type: 'llm_assign', label: '大模型赋值', icon: '📝' },
-  { type: 'parallel', label: '并行节点', icon: '🔀' },
-  { type: 'basic_branch', label: '基础分支', icon: '🌿' },
-  { type: 'llm_branch', label: '大模型分支', icon: '🌲' },
-  { type: 'assign', label: '赋值节点', icon: '📝' },
-  { type: 'workflow_call', label: '工作流调用', icon: '🔗' },
-  { type: 'http_call', label: 'HTTP调用', icon: '🌐' },
-  { type: 'user_input', label: '用户输入', icon: '👤' },
-  { type: 'info_output', label: '信息输出', icon: '💬' }
+  { type: 'start', label: '开始节点', icon: VideoPlay },
+  { type: 'end', label: '结束节点', icon: SwitchButton },
+  { type: 'user_input', label: '用户输入', icon: Avatar },
+  { type: 'info_output', label: '信息输出', icon: Comment },
+  { type: 'llm_call', label: '大模型调用', icon: ChatRound },
+  { type: 'llm_assign', label: '大模型赋值', icon: ChatLineRound },
+  { type: 'llm_branch', label: '大模型分支', icon: ChatLineSquare },
+  { type: 'parallel', label: '并行节点', icon: Expand },
+  { type: 'assign', label: '赋值节点', icon: EditPen },
+  { type: 'basic_branch', label: '基础分支', icon: Rank },
+  { type: 'http_call', label: 'HTTP调用', icon: ChromeFilled },
+  { type: 'workflow_call', label: '工作流调用', icon: Postcard },
 ]
 
 // 常量
 const nodeWidth = 180
 const nodeHeight = 80
-const portSize = 12
 const portSpacing = 30
 const canvasWidth = 5000
 const canvasHeight = 5000
@@ -850,6 +882,16 @@ const dragOffset = ref({ x: 0, y: 0 })
 const isDraggingCanvas = ref(false)
 const canvasDragStart = ref({ x: 0, y: 0 })
 const canvasOffset = ref({ x: 0, y: 0 })
+
+// 返回列表
+const goBack = () => {
+  emit('goBack')
+}
+
+// 重置工作流
+const resetWorkflow = () => {
+  emit('reset')
+}
 
 // 初始化标志，用于避免保存后清空界面
 const isInitialized = ref(false)
@@ -1525,11 +1567,6 @@ const selectNode = (node) => {
   }
 }
 
-// 节点更新
-const updateNode = () => {
-  // 节点基本信息已通过v-model双向绑定
-}
-
 const updateNodeConfig = () => {
   if (selectedNode.value) {
     selectedNode.value.config = { ...selectedNodeConfig.value }
@@ -1928,17 +1965,6 @@ const getEdgeNodeName = (nodeKey) => {
 }
 
 // 缩放控制
-const zoomIn = () => {
-  if (zoomLevel.value < 2) {
-    zoomLevel.value = Math.min(2, zoomLevel.value + 0.1)
-  }
-}
-
-const zoomOut = () => {
-  if (zoomLevel.value > 0.5) {
-    zoomLevel.value = Math.max(0.5, zoomLevel.value - 0.1)
-  }
-}
 
 const resetZoom = () => {
   zoomLevel.value = 1
@@ -2058,20 +2084,20 @@ const saveWorkflow = () => {
     ElMessage.warning('请输入工作流名称')
     return
   }
-  
+
   const startNodes = nodes.value.filter(n => n.type === 'start')
   const endNodes = nodes.value.filter(n => n.type === 'end')
-  
+
   if (startNodes.length === 0) {
     ElMessage.warning('工作流必须包含一个开始节点')
     return
   }
-  
+
   if (endNodes.length === 0) {
     ElMessage.warning('工作流必须包含一个结束节点')
     return
   }
-  
+
   // 构建工作流数据 - 符合后端要求的格式
   const workflowData = {
     id: props.workflow?.id,
@@ -2092,18 +2118,18 @@ const saveWorkflow = () => {
         // 查找源节点，判断是否是分支节点
         const fromNode = nodes.value.find(n => n.nodeKey === edge.fromNodeKey)
         const isFromBranchNode = fromNode && isBranchNode(fromNode.type)
-        
+
         // 构建transition对象
         const transition = {
         fromNodeKey: edge.fromNodeKey,
         toNodeKey: edge.toNodeKey,
         variableMappings: edge.variableMappings || '{}'
         }
-        
+
         // 只有分支节点的连接线才包含conditionExpression
         if (isFromBranchNode) {
           let conditionExpression = edge.conditionExpression
-          
+
           // 大模型分支节点：强制从分支列表中获取分支名称（覆盖已有的 conditionExpression）
           if (fromNode.type === 'llm_branch') {
             if (fromNode.config && fromNode.config.branches) {
@@ -2135,11 +2161,11 @@ const saveWorkflow = () => {
               conditionExpression = conditionExpression || ''
             }
           }
-          
+
           transition.conditionExpression = conditionExpression
         }
         // 非分支节点的连接线不包含conditionExpression，后端会直接执行
-        
+
         return transition
       }),
       globalVariables: globalVariables.value
@@ -2147,7 +2173,6 @@ const saveWorkflow = () => {
   }
   
   emit('save', workflowData)
-  ElMessage.success('工作流已保存')
 }
 
 // 运行工作流
@@ -2305,22 +2330,26 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 
 <style scoped>
 .workflow-designer {
-  width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #f5f7fa;
+  height: 100vh; /* 限制整体高度为屏幕高度 */
+  overflow: hidden; /* 隐藏整体滚动 */
 }
 
 /* 工具栏 */
 .designer-toolbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
-  background-color: #fff;
+  padding: 20px 20px;
+  background-color: rgba(255, 255, 255, 0.4);
   border-bottom: 1px solid #e0e0e0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.toolbar-left {
+  display: flex;
+  gap: 8px;
 }
 
 .toolbar-right {
@@ -2338,10 +2367,11 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 /* 节点面板 */
 .node-palette {
   width: 200px;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.3);
   border-right: 1px solid #e0e0e0;
-  padding: 16px;
-  overflow-y: auto;
+  padding: 20px;
+  overflow: hidden;
+  max-height: 100%
 }
 
 .node-palette h3 {
@@ -2360,17 +2390,19 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
   display: flex;
   align-items: center;
   padding: 12px;
-  background-color: #f0f0f0;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
   cursor: move;
   transition: all 0.2s;
 }
 
 .node-item:hover {
-  background-color: #e0e0e0;
-  border-color: #d0d0d0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 25px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
+  cursor: move;
+  transition: all 0.5s;
 }
 
 .node-icon {
@@ -2408,7 +2440,7 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
   background-image: 
     linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-  background-position: -10 -10;
+  background-position: 0 0;
   pointer-events: none;
 }
 
@@ -2490,6 +2522,7 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 
 /* 工作流节点 */
 .workflow-node {
+  backdrop-filter: blur(1px);
   position: absolute;
   width: 180px;
   min-height: 80px;
@@ -2508,6 +2541,8 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 
 .workflow-node:hover {
   box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.15);
+  scale:102%;
+  transition: scale 0.3s;
 }
 
 .workflow-node.node-selected {
@@ -2549,23 +2584,6 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
   align-items: center;
   justify-content: center;
   z-index: 10;
-}
-
-.port-circle {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid #909399;
-  background-color: #fff;
-  transition: all 0.2s;
-}
-
-.port-circle-input {
-  border-color: #67c23a;
-}
-
-.port-circle-output {
-  border-color: #409eff;
 }
 
 /* 端口三角形样式 - 朝右的实心三角形 */
@@ -2629,10 +2647,6 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
   z-index: 20;
 }
 
-.port-delete-btn:hover {
-  opacity: 1;
-  transform: scale(1.2);
-}
 
 /* 添加端口按钮 */
 .port-add-btn {
@@ -2674,11 +2688,6 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
   border-bottom: 1px solid rgba(224, 224, 224, 0);
   background-color: rgba(240, 240, 240, 0.0);
   border-radius: 8px 8px 0 0;
-}
-
-.node-type-icon {
-  font-size: 18px;
-  margin-right: 15px;
 }
 
 .node-name {
