@@ -538,7 +538,7 @@ onMounted(() => {
 
 .designer-wrapper {
   flex: 1;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.45);
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;

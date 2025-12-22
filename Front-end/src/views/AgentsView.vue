@@ -2,7 +2,7 @@
   <Layout :userInfo="userStore.userInfo">
     <div class="agents-container">
       <div class="page-header">
-        <h1>我的智能体</h1>
+        <h1 class="h1-white-stroke">我的智能体</h1>
         <el-button type="primary" @click="handleCreateAgent" :icon="Plus">创建智能体</el-button>
       </div>
 
@@ -765,8 +765,6 @@ onMounted(async () => {
 <style scoped>
 .agents-container {
   padding: 20px;
-  background-color: #f5f7fa;
-  min-height: calc(100vh - 64px);
 }
 
 .page-header {
@@ -783,7 +781,7 @@ onMounted(async () => {
 }
 
 .agents-card {
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.6);
 }
 
 .loading-container {

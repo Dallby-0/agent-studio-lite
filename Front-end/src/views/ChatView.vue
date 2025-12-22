@@ -283,22 +283,24 @@ onMounted(async () => {
 <style scoped>
 .chat-page {
   display: flex;
-  height: calc(100vh - 64px);
-  background-color: #f5f7fa;
+  border-radius: 20px;
+  height: calc(85vh - 20px);
+  background-color: rgba(245, 247, 250, 0.5);
 }
 
 /* 左侧侧边栏 */
 .agent-sidebar {
+  border-radius: 20px;
   width: 280px;
-  background: #fff;
-  border-right: 1px solid #e4e7ed;
+  background: rgba(255, 255, 255, 0.5);
+  border-right: 3px solid rgba(228, 231, 237, 0.25);
   display: flex;
   flex-direction: column;
 }
 
 .sidebar-header {
   padding: 16px;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid rgba(228, 231, 237, 0.32);
 }
 
 .sidebar-header h3 {
@@ -317,19 +319,22 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 40px;
   cursor: pointer;
   transition: all 0.3s;
   margin-bottom: 4px;
 }
 
 .agent-item:hover {
-  background-color: #f5f7fa;
+  background-color: rgba(245, 247, 250, 0.2);
+  border: 1px solid rgba(145, 145, 145, 0.4);
+  scale: 105%;
 }
 
 .agent-item.active {
-  background-color: #ecf5ff;
-  border: 1px solid #409eff;
+  background-color: rgba(236, 245, 255, 0.2);
+  border: 1px solid rgba(145, 145, 145, 0.4);
+  scale: 102%;
 }
 
 .agent-avatar {
@@ -375,10 +380,11 @@ onMounted(async () => {
 
 /* 右侧聊天区域 */
 .chat-main {
+  border-radius: 16px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .chat-header {
@@ -504,7 +510,8 @@ onMounted(async () => {
   gap: 12px;
   padding: 16px 24px;
   border-top: 1px solid #e4e7ed;
-  background: #fff;
+  border-bottom-right-radius: 16px;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .input-area .el-textarea {

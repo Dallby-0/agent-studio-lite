@@ -232,19 +232,18 @@ defineExpose(expose)
 .app-layout {
   display: flex;
   min-height: 100vh;
-  background-color: #f5f7fa;
 }
 
 /* 侧边栏样式 */
 .app-sidebar {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.66);
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   transition: width 0.3s ease, transform 0.3s ease;
   position: relative;
   overflow: hidden;
   z-index: 100;
   /* 使用CSS变量以便响应式调整 */
-  width: var(--sidebar-width, 250px);
+  width: var(--sidebar-width, 230px);
   display: flex;
   flex-direction: column;
 }
@@ -266,7 +265,7 @@ defineExpose(expose)
 
 /* 顶部导航 */
 .app-header {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: sticky;
   top: 0;

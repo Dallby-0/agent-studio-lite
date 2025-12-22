@@ -3,7 +3,7 @@
     <div class="workflows-view">
       <!-- 顶部导航 -->
       <div class="view-header">
-        <h1>工作流管理</h1>
+        <h1 class="h1-white-stroke">工作流管理</h1>
         <div class="header-actions">
           <el-button type="primary" @click="createWorkflow">
             <el-icon><Plus /></el-icon>
@@ -229,6 +229,7 @@ onMounted(() => {
 }
 
 .workflows-card {
+  background-color: rgba(245, 247, 250, 0.7);
   margin-bottom: 20px;
 }
 

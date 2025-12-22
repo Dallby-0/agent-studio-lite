@@ -2765,7 +2765,8 @@ watch(() => props.workflow, (newWorkflow, oldWorkflow) => {
 /* 属性面板 */
 .properties-panel {
   width: 300px;
-  background-color: #fff;
+  backdrop-filter: blur(5px);
+  background-color: rgba(255, 255, 255, 0.5);
   border-left: 1px solid #e0e0e0;
   padding: 16px;
   overflow-y: auto;

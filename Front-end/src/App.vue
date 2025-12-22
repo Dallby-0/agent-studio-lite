@@ -24,7 +24,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  background-color: #f5f7fa;
+  background-image: url("https://picsum.photos/1920/1080") !important;
 }
 
 .app-container {
