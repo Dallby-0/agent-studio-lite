@@ -159,7 +159,7 @@
             <!-- 输入端口（左侧） -->
               <div class="port-group port-group-input">
                 <div 
-                v-for="(port, index) in getInputPorts(node)" 
+                v-for="(index) in getInputPorts(node)"
                   :key="`input-${index}`"
                   class="port port-input"
                   :data-node-key="node.nodeKey"
