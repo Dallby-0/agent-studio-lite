@@ -160,10 +160,10 @@ const connectWebSocket = () => {
   }
   
   try {
-    // 获取API基础URL（从环境变量或默认值）
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-    const wsProtocol = apiBaseUrl.startsWith('https') ? 'wss:' : 'ws:'
-    const wsHost = apiBaseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
+    // 使用当前页面的协议和主机名，而不是硬编码的后端服务地址
+    // 这样WebSocket连接会通过前端的nginx代理，与API请求保持一致
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsHost = window.location.host
     
     // 从localStorage获取token，添加到URL查询参数中
     const token = localStorage.getItem('token')
