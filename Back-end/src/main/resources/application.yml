@@ -93,7 +93,7 @@ springdoc:
 # AI服务配置 - DeepSeek API
 ai:
   deepseek:
-    api-key: ${DEEPSEEK_API_KEY:sk-f419c218ce5f4f6badf742558ef45176}
+    api-key: ${DEEPSEEK_API_KEY:sk-62fecb7764f6421d863224ad816a785c}
     base-url: https://api.deepseek.com
     model: deepseek-chat
     max-tokens: 2048
